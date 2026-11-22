@@ -6,7 +6,7 @@ package fears.engine;
  * <p>Six armes, touches 1 à 6 : poing, pistolet, rolling, lance-roquettes, plasma,
  * tronçonneuse. L'image affichée est l'une des 17 images 128×87 ; au tir, les images de tir
  * défilent, ou bien l'arme recule (poing, roquettes). Changer d'arme l'abaisse
- * (VSTART $D3 → $121 par pas de 5), change l'image, puis la relève ($121 → $D0 par pas de 4).
+ * (VSTART $D3 → $121 par pas de 5), change l'image, puis la relève par pas de 4.
  *
  * <p>Sans aliens, les tirs n'ont pas encore de cible ; ils consomment, sonnent et s'animent
  * comme dans le jeu.
@@ -37,8 +37,11 @@ public final class Weapons {
     static final int[] FIST_RECOIL = {3, 2, 2, 1, 1, 1, 0, -3, -7};
     static final int[] ROCKET_RECOIL = {5, 3, 0, -1, -1, -1, -1, -2, -2};
 
-    /** Position verticale de l'arme : en place, et abaissée. */
-    public static final int RAISED = 0xD0;
+    /**
+     * Position verticale de l'arme en place : POS $D370 / $D390 dans l'en-tête de ses sprites,
+     * soit VSTART $D3 — ses 87 lignes finissent alors exactement en bas de la fenêtre ($12A).
+     */
+    public static final int RAISED = 0xD3;
     static final int LOWER_FROM = 0xD3;
     public static final int LOWERED = 0x121;
 
@@ -96,6 +99,11 @@ public final class Weapons {
             case Stats.AMMO_3 -> 3;
             default -> 0;
         };
+    }
+
+    /** Image d'animation de tir en cours (0 = repos) : indexe la table de l'éclair de bouche. */
+    public int fireFrame() {
+        return frame;
     }
 
     /** Image à afficher (0 à 16). */

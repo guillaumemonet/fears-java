@@ -27,6 +27,15 @@ final class Textures {
         return source.getRGB(0, 0, source.getWidth(), source.getHeight(), null, 0, source.getWidth());
     }
 
+    /** Les index de couleur d'un PNG indexé, ligne par ligne depuis le haut. */
+    static int[] indices(Path file) throws IOException {
+        BufferedImage source = ImageIO.read(file.toFile());
+        if (source == null || !(source.getColorModel() instanceof java.awt.image.IndexColorModel)) {
+            throw new IOException("image indexée attendue : " + file);
+        }
+        return source.getRaster().getPixels(0, 0, source.getWidth(), source.getHeight(), (int[]) null);
+    }
+
     /**
      * Charge un PNG. OpenGL compte les lignes de bas en haut : la ligne 0 de l'image se
      * retrouve en v = 1.

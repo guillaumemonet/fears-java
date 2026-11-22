@@ -51,6 +51,18 @@ public final class Hud {
     private final byte[] health = new byte[SPRITE_BYTES];
     private final int[] colors = new int[16];
     private final int[][] weaponFrames;
+    /** Index de couleur (0 à 15) des 17 images de l'arme : deux paires de sprites attachées. */
+    private final int[][] weaponIndices;
+    /**
+     * Éclair de bouche ({@code L0134e4}) : BPLCON4 vaut $77 sur les rangées 0 à n de la vue,
+     * $66 au-delà. Au-dessus de la ligne 2(n+1), les sprites prennent donc leurs couleurs dans
+     * la banque 112–127 (oranges et jaunes) au lieu de la palette de l'arme. n vient de
+     * {@code L013530} (pistolet : 91, 92, 93, 92) ou {@code L013538} (rolling : 99), selon
+     * l'image de tir ; les autres armes gardent la dernière valeur écrite.
+     */
+    static final int PISTOL_FLASH = 0x13530;
+    static final int ROLLING_FLASH = 0x13538;
+    private int flashRows = 91;
     private final int[] image = new int[WIDTH * HEIGHT];
     /** Éclair rouge quand le joueur est touché : 16 crans, un toutes les 3 VBL (L013b34). */
     private int flash;
@@ -66,9 +78,13 @@ public final class Hud {
     /**
      * @param weaponFrames les 17 images de l'arme, 128×87 en 0xAARRGGBB (alpha 0 = transparent)
      */
-    public Hud(LinkedImage engine, int[][] weaponFrames) {
+    /**
+     * @param weaponIndices les mêmes images en index de couleur 0..15 (0 = transparent)
+     */
+    public Hud(LinkedImage engine, int[][] weaponFrames, int[][] weaponIndices) {
         this.engine = engine;
         this.weaponFrames = weaponFrames;
+        this.weaponIndices = weaponIndices;
         copy(SPRITE_AMMO, ammo);
         copy(SPRITE_FRAME, frameSprite);
         copy(SPRITE_HEALTH, health);
@@ -229,13 +245,21 @@ public final class Hud {
     }
 
     private void drawWeapon(Weapons weapons) {
+        int table = weapons.weapon() == Weapons.PISTOL ? PISTOL_FLASH
+                : weapons.weapon() == Weapons.ROLLING ? ROLLING_FLASH : 0;
+        if (table != 0) {
+            flashRows = engine.u16(table + 2 * Math.min(3, weapons.fireFrame()));
+        }
+        int bankLimit = 2 * (flashRows + 1);
         int[] frame = weaponFrames[weapons.image()];
+        int[] indices = weaponIndices[weapons.image()];
         int top = weapons.vstart() - 0x2A;
         for (int y = 0; y < 87; y++) {
+            boolean hudBank = top + y < bankLimit;
             for (int x = 0; x < 128; x++) {
                 int argb = frame[y * 128 + x];
                 if ((argb >>> 24) != 0) {
-                    put(96 + x, top + y, argb & 0xFFFFFF);
+                    put(96 + x, top + y, hudBank ? colors[indices[y * 128 + x]] : argb & 0xFFFFFF);
                 }
             }
         }

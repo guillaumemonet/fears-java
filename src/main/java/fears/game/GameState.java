@@ -158,11 +158,13 @@ final class GameState extends BaseAppState implements RawInputListener {
         doors = new Doors(world, player, !entry.paletteB());
         doors.setListener(sounds);
         int[][] frames = new int[17][];
+        int[][] indices = new int[17][];
         for (int i = 0; i < frames.length; i++) {
-            frames[i] = Textures.argb(resources.resolve("engine").resolve("armes")
-                    .resolve(String.format("arme_%02d.png", i)));
+            Path file = resources.resolve("engine").resolve("armes").resolve(String.format("arme_%02d.png", i));
+            frames[i] = Textures.argb(file);
+            indices[i] = Textures.indices(file);
         }
-        hud = new Hud(LinkedImage.load(resources.resolve("raw").resolve("d1_0282da.bin")), frames);
+        hud = new Hud(LinkedImage.load(resources.resolve("raw").resolve("d1_0282da.bin")), frames, indices);
         hud.update(stats, weapons);
         hudView = new ScreenView(Hud.WIDTH, Hud.HEIGHT, 2f, true);
         hudView.upload(hud.image());
