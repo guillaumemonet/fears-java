@@ -1,0 +1,28 @@
+// Surfaces du niveau : texture aux texels nets, ombrage par paliers selon la distance
+// (MOTEUR.md §4.1), noir au-delà de la portée des rayons.
+MaterialDef FearsLevel {
+
+    MaterialParameters {
+        Texture2D ColorMap
+        // Distance d'origine où commence l'ombrage : 7500 pour les murs, 9000 pour les sols.
+        Float ShadeStart : 7500
+        // Unités de distance du lanceur de rayons par case.
+        Float DistancePerCell : 1590
+        // Portée des rayons : au-delà, rien n'est tracé.
+        Float Range : 14300
+        // Défilement de la texture 0, en coordonnées de texture par seconde.
+        Vector2 Scroll : 0 0
+    }
+
+    Technique {
+        VertexShader GLSL300 GLSL150 GLSL100 : Fears/Shaders/Level.vert
+        FragmentShader GLSL300 GLSL150 GLSL100 : Fears/Shaders/Level.frag
+
+        WorldParameters {
+            WorldViewProjectionMatrix
+            WorldMatrix
+            CameraPosition
+            Time
+        }
+    }
+}

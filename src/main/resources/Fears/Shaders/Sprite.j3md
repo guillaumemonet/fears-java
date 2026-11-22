@@ -1,0 +1,22 @@
+// Objets et aliens : image aux texels nets, couleur noire transparente, ombrés de 3 crans
+// au-delà de la distance 9500 (MOTEUR.md, rendu §6.2).
+MaterialDef FearsSprite {
+
+    MaterialParameters {
+        Texture2D ColorMap
+        Float DistancePerCell : 1590
+        Float Range : 14300
+        Float ShadeFrom : 9500
+    }
+
+    Technique {
+        VertexShader GLSL300 GLSL150 GLSL100 : Fears/Shaders/Level.vert
+        FragmentShader GLSL300 GLSL150 GLSL100 : Fears/Shaders/Sprite.frag
+
+        WorldParameters {
+            WorldViewProjectionMatrix
+            WorldMatrix
+            CameraPosition
+        }
+    }
+}
