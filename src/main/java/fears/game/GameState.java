@@ -87,6 +87,8 @@ final class GameState extends BaseAppState implements RawInputListener {
     private EngineSounds sounds;
     private ObjectView objects;
     private Aliens aliens;
+    /** Le boss du niveau 30, ou null. */
+    private fears.engine.Boss boss;
     private AlienView alienView;
     private final Stats stats;
     private final Weapons weapons;
@@ -150,7 +152,8 @@ final class GameState extends BaseAppState implements RawInputListener {
         LevelCatalog.Entry entry = LevelCatalog.forLevel(levelNumber);
         System.out.println("Niveau " + levelNumber + " : " + level.title + " (murs " + entry.walls() + ")");
 
-        data = new EngineData(LinkedImage.load(resources.resolve("raw").resolve("d1_0282da.bin")));
+        LinkedImage engine = LinkedImage.load(resources.resolve("raw").resolve("d1_0282da.bin"));
+        data = new EngineData(engine);
         world = new World(level);
         spawn();
         sounds = new EngineSounds(data);
@@ -173,6 +176,10 @@ final class GameState extends BaseAppState implements RawInputListener {
         aliens = new Aliens(world, player, data, sets, options.difficulty());
         aliens.setListener(sounds);
         weapons.setProjectileFlying(aliens::playerShotFlying);
+        if (entry.paletteB()) {
+            boss = new fears.engine.Boss(engine, world, doors, aliens);
+            aliens.setBoss(boss);
+        }
         alienView = new AlienView(app.getAssetManager(), world, aliens, sets,
                 resources.resolve("sprites"), resources.resolve("objects").resolve("d1_00bf00"));
         scene.attachChild(alienView.node());
@@ -229,6 +236,20 @@ final class GameState extends BaseAppState implements RawInputListener {
             }
         }
         builtRevision = world.revision();
+        applyRemap();
+    }
+
+    /** Niveau 30 : les murs passent par la table de remappage animée du boss ({@code L011308}). */
+    private void applyRemap() {
+        if (boss == null) {
+            return;
+        }
+        for (var entry : geometries.entrySet()) {
+            if (entry.getKey().startsWith("w")) {
+                int texture = Integer.parseInt(entry.getKey().substring(1));
+                entry.getValue().getMaterial().setTexture("ColorMap", textures[boss.remap(texture)]);
+            }
+        }
     }
 
     private static Mesh mesh(LevelMesh.Batch batch) {
@@ -354,6 +375,12 @@ final class GameState extends BaseAppState implements RawInputListener {
         int fired = weapons.takeFired();
         if (fired >= 0) {
             aliens.playerFired(fired);
+        }
+        if (boss != null) {
+            boss.tick();
+            if (boss.takeRemapChanged()) {
+                applyRemap();
+            }
         }
         int damage = aliens.tick();
         sounds.tick();

@@ -127,3 +127,13 @@ Enregistrement de 512 octets : temps du niveau, temps total, score ; 9 stats (vi
 rolling, roquettes, plasma, tronçonneuse, balles, roquettes, cellules) ; niveau suivant ; −1 ;
 options ; « Fred » ; difficulté. La santé n'est pas sauvegardée. Le portage écrit un fichier
 texte par emplacement dans `~/.fears/sauvegardes/partieNN.sav` (ou `-Dfears.sauvegardes`).
+
+## Séquence de fin (`d2_0a9a00`) — `EndSequence.java`
+
+Module « fin ». Phase 1 (`L010092`, 390 trames) : tête du boss en 3 × 3 tuiles de 64×64
+(`L01019c` : image, position dans un écran lores 5 plans de 200 octets par ligne) ; départ
+tuiles 0–5, 6, 9, 11 ; script `L010226` {trame, nombre − 1, tuiles…} (yeux et bouche animés,
+puis la tête se défait à partir de la trame 240). Phase 2 (`L010530`) : texte défilant comme la
+présentation (même police et même chasse), en boucle sans fin ; une chaîne `$01 n` affiche la
+photo de l'auteur n (`L010e86`, 376 trames). [S] Les photos défilent avec le texte et leur ligne
+réserve leur hauteur. L'original ne rend jamais la main ; le portage revient au menu sur un clic.

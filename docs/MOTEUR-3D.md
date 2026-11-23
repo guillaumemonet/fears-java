@@ -40,6 +40,11 @@ dans jMonkeyEngine.
   de la vue et non masqué ; poing et tronçonneuse au contact ; roquette et plasma en projectile
   (16 unités/VBL, 8 points, un seul à la fois). Mort de l'alien quand ses PV deviennent négatifs.
 
+- `Boss` (niveau 30) : la texture de mur 11, 500 PV ; table de remappage des murs animée toutes
+  les 20 trames (`L01148a`) ; salves de 7 projectiles depuis (15,25) (`L011582`) ; −1 par tir de
+  pistolet/rolling quand la visée montre la texture 11, −10 par roquette arrivée sur sa case ;
+  portes 6, 7, 8 forcées sous 400/300/200 PV ; à sa mort, mur bas de (14,25) à 12 et porte 10.
+
 ## Cadence
 
 Toute la logique tourne à **50 Hz fixes** (une VBL PAL), quelle que soit la fréquence de
@@ -65,7 +70,7 @@ une VBL sur deux. [à faire] Interpoler l'affichage entre deux VBL pour les écr
 
 ## Pas encore porté
 
-Alien translucide (type 11), boss du niveau 30, éclair de bouche (bascule de
+Alien translucide (type 11) (bascule de
 la banque de couleurs des sprites, `L0134e4`), sons d'ambiance des murs, carte, message de vies et fondu rouge à la mort, séquence de fin après le niveau 30.
 
 ## Lancer

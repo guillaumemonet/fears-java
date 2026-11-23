@@ -164,7 +164,7 @@ final class FearsApp extends SimpleApplication {
     /**
      * Sortie atteinte ({@code L011b7a}) : score, écran des statistiques, sauvegarde si elle est
      * demandée ({@code L014444}), puis le château pendant le « chargement » du niveau suivant ;
-     * après le trentième, retour au menu. [à porter] La séquence de fin (d2_0a9a00).
+     * après le trentième, la séquence de fin.
      */
     private void levelFinished(fears.engine.LevelResult result) {
         int level = result.level();
@@ -178,13 +178,31 @@ final class FearsApp extends SimpleApplication {
                 session.totalTime(), session.score());
         play(() -> {
             if (level >= 30) {
-                backToFrontEnd();
+                theEnd();
             } else if (stats.saveRequested()) {
                 saveThenContinue(level, result);
             } else {
                 castleThenLevel(level + 1);
             }
         }, new InterludeState.Step(stats, stats::finished));
+    }
+
+    /** Après le niveau 30 : la séquence de fin (d2_0a9a00) sur le module « fin », puis le menu. */
+    private void theEnd() {
+        session = null;
+        try {
+            fears.menu.EndSequence end = new fears.menu.EndSequence(assets, resources);
+            MusicPlayer music = new MusicPlayer(this);
+            music.load(resources.resolve("fin").resolve("fin.mod"));
+            music.play();
+            play(() -> {
+                music.stop();
+                backToFrontEnd();
+            }, new InterludeState.Step(end, end::finished));
+        } catch (IOException e) {
+            System.err.println("AVERTISSEMENT : sequence de fin illisible : " + e.getMessage());
+            backToFrontEnd();
+        }
     }
 
     /** SAVE GAME : choix d'un emplacement, écriture, puis le niveau suivant. */

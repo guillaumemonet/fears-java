@@ -40,8 +40,10 @@ l'Amiga les affichait.
 | Mort : fondu rouge et vies restantes | Fin de niveau : statistiques et score |
 | ![Château](docs/images/chateau.png) | ![Game over](docs/images/game-over.png) |
 | Écran de chargement entre niveaux | Fin de partie |
-| ![Chargement](docs/images/chargement.png) | |
-| LOAD GAME : choix d'un emplacement | |
+| ![Chargement](docs/images/chargement.png) | ![Niveau 30](docs/images/niveau30.png) |
+| LOAD GAME : choix d'un emplacement | Niveau 30, palette B |
+| ![Fin : le boss](docs/images/fin-boss.png) | ![Fin : générique](docs/images/fin-generique.png) |
+| Fin : la tête du boss | Fin : le générique des auteurs |
 
 ## Lancer
 
@@ -115,9 +117,10 @@ l'extracteur (`extract/out/exe/*.s`). **[C]** = lu dans le code, **[S]** = suppo
 
 Fait : intro, présentation, menu et options, niveaux en 3D, déplacements et collisions, portes
 et interrupteurs, objets, aliens et leurs tirs, six armes, HUD, mort et vies, statistiques et
-score entre les niveaux, sauvegarde et chargement (11 emplacements), game over.
+score entre les niveaux, sauvegarde et chargement (11 emplacements), game over, boss du
+niveau 30 et séquence de fin.
 
-À faire : carte, alien translucide, boss du niveau 30 et séquence de fin,
+À faire : carte, alien translucide,
 éclair de bouche, sons d'ambiance des murs, interpolation de l'affichage pour les écrans rapides.
 
 ## Origine et droits

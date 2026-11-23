@@ -154,6 +154,34 @@ public final class Aliens {
     private final List<Shot> shots = new ArrayList<>();
     private Shot playerShot;
     private Listener listener;
+    private Boss boss;
+
+    /** Le boss du niveau 30 : cible des tirs qui visent la texture 11 et des roquettes sur sa case. */
+    public void setBoss(Boss boss) {
+        this.boss = boss;
+    }
+
+    /**
+     * {@code L011508} : un projectile du boss, modèle 0, au centre de sa case à la hauteur
+     * {@code h}, vitesse (vx, vy) en unités monde par pas de 4 unités (8 par VBL).
+     */
+    void spawnBossShot(int cell, double h, double vx, double vy) {
+        if (shots.size() >= MAX_SHOTS || shots.stream().anyMatch(s -> s.cell == cell)) {
+            return;
+        }
+        EngineData.AlienShot model = data.alienShot(0);
+        Shot shot = new Shot(false, model.image(), model.width(), model.height());
+        shot.x = (cell % World.SIZE) * 64 + 32;
+        shot.y = (cell / World.SIZE) * 64 + 32;
+        shot.cell = cell;
+        shot.h = h;
+        shot.vx = vx * 8;
+        shot.vy = vy * 8;
+        shot.damage = difficulty == 0 ? EASY_DAMAGE[0] : model.damage();
+        shot.loss = model.loss();
+        shot.life = 15;
+        shots.add(shot);
+    }
 
     /**
      * @param sets       les ids de type des 3 jeux d'aliens du niveau
@@ -196,6 +224,15 @@ public final class Aliens {
 
     public List<Alien> aliens() {
         return aliens;
+    }
+
+    /** Nombre de projectiles d'aliens (et du boss) en vol. */
+    int alienShots() {
+        return shots.size();
+    }
+
+    void clearAlienShots() {
+        shots.clear();
     }
 
     public List<Shot> shots() {
@@ -412,6 +449,10 @@ public final class Aliens {
                 }
             }
             default -> {
+                if (boss != null && Boss.centerTexture(world, player) == Boss.FACE) {
+                    boss.hurt(1, listener);
+                    return;
+                }
                 Alien target = target(false);
                 if (target != null) {
                     double depth = 32 * depth(target) + 1500;
@@ -519,6 +560,13 @@ public final class Aliens {
             shot.life--;
             int cell = cellAt(shot.x, shot.y);
             shot.cell = cell;
+            if (boss != null && cell == Boss.CELL) {
+                boss.hurt(10, listener);
+                if (listener != null) {
+                    listener.sound(0x0C);
+                }
+                return false;
+            }
             if (world.solid(cell) || shot.life <= 0
                     || shot.h > world.floor(cell) + 2 || shot.h < world.ceiling(cell) - 2) {
                 return false;

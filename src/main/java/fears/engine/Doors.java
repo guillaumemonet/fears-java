@@ -94,6 +94,19 @@ public final class Doors {
         }
     }
 
+    /**
+     * Met une porte en mouvement sans déclencheur, comme le boss du niveau 30 en écrivant
+     * directement {@code L0143d6} : la porte qui bougeait s'arrête où elle en est.
+     */
+    public void force(int door) {
+        world.setActiveDoor(door);
+        triggerCell = -1;
+        firstStep = false;
+        if (listener != null) {
+            listener.doorStarted(door);
+        }
+    }
+
     /** {@code L014212}. */
     private void tryActivate() {
         int here = player.cell();
