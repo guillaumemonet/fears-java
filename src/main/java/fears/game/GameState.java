@@ -91,6 +91,14 @@ final class GameState extends BaseAppState implements RawInputListener {
     private Aliens aliens;
     /** Le boss du niveau 30, ou null. */
     private fears.engine.Boss boss;
+    /** La carte (TAB) : cases vues, et son écran quand elle est ouverte. */
+    private fears.engine.AutoMap automap;
+    private ScreenView mapView;
+    private boolean mapOpen;
+    private boolean tab;
+    /** Toutes les touches de sortie ont été relâchées depuis l'ouverture (ou la fermeture). */
+    private boolean mapReleased;
+    private boolean closingWait;
     private AlienView alienView;
     private final Stats stats;
     private final Weapons weapons;
@@ -178,6 +186,8 @@ final class GameState extends BaseAppState implements RawInputListener {
         aliens = new Aliens(world, player, data, sets, options.difficulty());
         aliens.setListener(sounds);
         weapons.setProjectileFlying(aliens::playerShotFlying);
+        automap = new fears.engine.AutoMap(engine, world);
+        mapView = new ScreenView(fears.engine.AutoMap.WIDTH, fears.engine.AutoMap.HEIGHT, 1f);
         if (entry.paletteB()) {
             boss = new fears.engine.Boss(engine, world, doors, aliens);
             aliens.setBoss(boss);
@@ -205,6 +215,54 @@ final class GameState extends BaseAppState implements RawInputListener {
             textures[i] = Textures.load(walls.resolve(String.format("%02d.png", i)));
         }
         rebuild();
+    }
+
+    /**
+     * La carte ({@code L01602a}) : TAB l'ouvre et suspend le jeu ; TAB, le clic ou le feu la
+     * referment, une fois relâchés. Vrai tant que la carte occupe la VBL.
+     */
+    private boolean mapStep() {
+        boolean exitKeys = tab || fire || mouseFire;
+        if (closingWait) {
+            // En sortie, le moteur attend que tout soit relâché avant de reprendre.
+            if (exitKeys) {
+                return true;
+            }
+            closingWait = false;
+            return false;
+        }
+        if (!mapOpen) {
+            automap.markSeen(player, horizontalFov());
+            if (tab) {
+                mapOpen = true;
+                mapReleased = false;
+                automap.open(player);
+                SimpleApplication app = (SimpleApplication) getApplication();
+                hudView.detach();
+                mapView.attach(app.getGuiNode(), app.getAssetManager());
+                return true;
+            }
+            return false;
+        }
+        if (!exitKeys) {
+            mapReleased = true;
+        } else if (mapReleased) {
+            mapOpen = false;
+            closingWait = true;
+            SimpleApplication app = (SimpleApplication) getApplication();
+            mapView.detach();
+            hudView.attach(app.getGuiNode(), app.getAssetManager());
+            return true;
+        }
+        automap.tick(player);
+        mapView.upload(automap.image());
+        return true;
+    }
+
+    /** Champ de vision horizontal de la caméra, en degrés. */
+    private double horizontalFov() {
+        double vertical = Math.toRadians(Float.parseFloat(System.getProperty("fears.fov", String.valueOf(DEFAULT_FOV))));
+        return Math.toDegrees(2 * Math.atan(Math.tan(vertical / 2) * Hud.WIDTH / (2.0 * Hud.HEIGHT)));
     }
 
     /** Le joueur à la case et à l'angle de départ du niveau. */
@@ -323,6 +381,10 @@ final class GameState extends BaseAppState implements RawInputListener {
         if (hudView != null) {
             hudView.detach();
         }
+        if (mapView != null) {
+            mapView.detach();
+            mapOpen = false;
+        }
         app.getCamera().setViewPort(0, 1, 0, 1);
         app.getInputManager().removeRawInputListener(this);
         if (sounds != null) {
@@ -348,6 +410,9 @@ final class GameState extends BaseAppState implements RawInputListener {
             }
         }
         frame(cam);
+        if (mapOpen) {
+            mapView.layout(cam.getWidth(), cam.getHeight());
+        }
         placeCamera();
         if (alienView != null) {
             alienView.update();
@@ -363,6 +428,9 @@ final class GameState extends BaseAppState implements RawInputListener {
             ambience.tick();
         }
         if (finished) {
+            return;
+        }
+        if (mapStep()) {
             return;
         }
         if (dying >= 0) {
@@ -452,6 +520,7 @@ final class GameState extends BaseAppState implements RawInputListener {
         right = "droite".equals(step[0]);
         activate = "espace".equals(step[0]);
         fire = "tirer".equals(step[0]);
+        tab = "carte".equals(step[0]);
         if ("mourir".equals(step[0]) && dying < 0 && scriptFrames == 0 && stats.damage(999)) {
             died();
         }
@@ -464,7 +533,7 @@ final class GameState extends BaseAppState implements RawInputListener {
             script.poll();
             scriptFrames = 0;
             if (script.isEmpty()) {
-                forward = back = left = right = activate = run = fire = false;
+                forward = back = left = right = activate = run = fire = tab = false;
             }
         }
     }
@@ -585,6 +654,7 @@ final class GameState extends BaseAppState implements RawInputListener {
             case KeyInput.KEY_D -> strafeRight = pressed;
             case KeyInput.KEY_LSHIFT, KeyInput.KEY_RSHIFT -> run = pressed;
             case KeyInput.KEY_SPACE -> activate = pressed;
+            case KeyInput.KEY_TAB -> tab = pressed;
             case KeyInput.KEY_LCONTROL, KeyInput.KEY_RCONTROL -> fire = pressed;
             case KeyInput.KEY_1, KeyInput.KEY_2, KeyInput.KEY_3, KeyInput.KEY_4, KeyInput.KEY_5,
                  KeyInput.KEY_6 -> {

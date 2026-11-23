@@ -44,6 +44,8 @@ l'Amiga les affichait.
 | LOAD GAME : choix d'un emplacement | Niveau 30, palette B |
 | ![Fin : le boss](docs/images/fin-boss.png) | ![Fin : générique](docs/images/fin-generique.png) |
 | Fin : la tête du boss | Fin : le générique des auteurs |
+| ![Carte](docs/images/carte.png) | |
+| La carte (TAB) et sa boussole | |
 
 ## Lancer
 
@@ -85,6 +87,7 @@ quitter.
 | clic gauche, Ctrl | tirer |
 | 1 à 6 | poing, pistolet, rolling, roquettes, plasma, tronçonneuse |
 | Espace | portes, interrupteurs, sortie |
+| TAB | carte (jeu en pause) |
 | Échap | retour au menu |
 
 Sur Amiga, Entrée faisait courir et Maj tirer.
@@ -118,9 +121,9 @@ l'extracteur (`extract/out/exe/*.s`). **[C]** = lu dans le code, **[S]** = suppo
 Fait : intro, présentation, menu et options, niveaux en 3D, déplacements et collisions, portes
 et interrupteurs, objets, aliens et leurs tirs, six armes, HUD, mort et vies, statistiques et
 score entre les niveaux, sauvegarde et chargement (11 emplacements), game over, boss du
-niveau 30 et séquence de fin, ambiances sonores des murs.
+niveau 30 et séquence de fin, ambiances sonores des murs, carte.
 
-À faire : carte, alien translucide,
+À faire : alien translucide,
 interpolation de l'affichage pour les écrans rapides.
 
 ## Origine et droits

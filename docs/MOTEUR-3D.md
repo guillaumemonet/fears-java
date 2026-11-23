@@ -49,6 +49,12 @@ dans jMonkeyEngine.
   en delta joués en boucle à partir de `loop + 200`, enveloppes {trame, volume, période}
   interpolées à chaque VBL ; la période est rendue par la hauteur du son (`AmbienceSound`).
 
+- `AutoMap` (TAB, `L01602a`) : pause ; lores 7 plans ; fond en tuile 32×32 (`L01CF94`) ; arêtes
+  entre cases vues dont les sols diffèrent (4×4 px par case, gris pour 1 unité, blanc au-delà) ;
+  point rouge du joueur ; aiguille 3D à 4 facettes qui tourne en 32 images vers le cap, couleurs
+  de la table `L016414`. Les cases « vues » (marque à case + 0x221FC posée par le lanceur de
+  rayons) sont ici marquées par des rayons lancés dans le champ de la caméra.
+
 ## Cadence
 
 Toute la logique tourne à **50 Hz fixes** (une VBL PAL), quelle que soit la fréquence de
