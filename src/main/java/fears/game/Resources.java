@@ -71,6 +71,9 @@ public final class Resources {
         }
         List<Path> disks = findDisks();
         if (disks.isEmpty()) {
+            disks = askForDisks();
+        }
+        if (disks.isEmpty()) {
             throw new IOException("ressources absentes de " + cache
                     + " et aucune disquette de Fears trouvée.\n"
                     + "Posez les deux ADF (ou leurs zip) dans ../adf, ou indiquez leur répertoire"
@@ -89,6 +92,30 @@ public final class Resources {
         } catch (IOException e) {
             return false;
         }
+    }
+
+    /**
+     * Le paquet autonome n'a pas de console : s'il ne trouve pas les disquettes, il demande où
+     * elles sont, puis range leur dossier dans ~/.fears/adf.txt pour ne plus le redemander.
+     */
+    private static List<Path> askForDisks() throws IOException {
+        if (java.awt.GraphicsEnvironment.isHeadless()) {
+            return List.of();
+        }
+        javax.swing.JFileChooser chooser = new javax.swing.JFileChooser();
+        chooser.setDialogTitle("Fears : dossier des deux disquettes (ADF ou zip)");
+        chooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
+        if (chooser.showOpenDialog(null) != javax.swing.JFileChooser.APPROVE_OPTION) {
+            return List.of();
+        }
+        Path chosen = chooser.getSelectedFile().toPath();
+        List<Path> disks = disksIn(chosen);
+        if (!disks.isEmpty()) {
+            Path memo = cacheDirectory().getParent().resolve("adf.txt");
+            Files.createDirectories(memo.getParent());
+            Files.writeString(memo, chosen.toAbsolutePath().toString());
+        }
+        return disks;
     }
 
     /** Extrait dans un répertoire temporaire, puis le met en place d'un seul coup. */
@@ -152,6 +179,11 @@ public final class Resources {
             places.add(Path.of(place));
         }
         places.add(Path.of(System.getProperty("user.home"), ".fears", "adf"));
+        // Le dossier choisi lors d'un lancement précédent.
+        Path memo = cacheDirectory().getParent().resolve("adf.txt");
+        if (Files.isRegularFile(memo)) {
+            places.add(Path.of(Files.readString(memo).trim()));
+        }
         for (Path place : places) {
             List<Path> found = disksIn(place);
             if (!found.isEmpty()) {

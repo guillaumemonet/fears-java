@@ -26,6 +26,10 @@ public final class Main {
             resources = Resources.obtain();
         } catch (IOException e) {
             System.err.println("ERREUR : " + e.getMessage());
+            if (!java.awt.GraphicsEnvironment.isHeadless()) {
+                javax.swing.JOptionPane.showMessageDialog(null, e.getMessage(), "Fears",
+                        javax.swing.JOptionPane.ERROR_MESSAGE);
+            }
             System.exit(1);
             return;
         }

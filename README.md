@@ -49,14 +49,27 @@ l'Amiga les affichait.
 | ![Tramage](docs/images/tramage.png) | |
 | Tramage (F1) : pixels chunky décalés une ligne sur deux | |
 
-## Lancer
+## Jouer sans rien installer
 
-Il faut Java 21 et Gradle, et les deux disquettes de Fears (`Fears (1995)(Manyk)(AGA)(Disk 1 of 2)…`).
+Chaque [release](https://github.com/guillaumemonet/fears-java/releases) fournit une archive
+`fears-<version>-windows-x64.zip` : décompressez-la et lancez `Fears.exe`, qui porte son propre
+Java. Il faut les deux disquettes du jeu d'origine (ADF, ou les zip qui les contiennent) : posez-les
+dans `~/.fears/adf`, ou laissez le jeu vous demander leur dossier au premier lancement.
+
+## Construire
+
+```
+./gradlew packageZip      # paquet autonome dans build/distributions/
+```
+
+## Lancer depuis les sources
+
+Il faut Java 21 (le wrapper Gradle s'occupe du reste), et les deux disquettes de Fears (`Fears (1995)(Manyk)(AGA)(Disk 1 of 2)…`).
 Elles sont cherchées dans `-Dfears.adf=<répertoire>`, puis `../adf`, `../extract/disks`,
 `~/.fears/adf`.
 
 ```
-gradle run
+./gradlew run
 ```
 
 | Option | Effet |
