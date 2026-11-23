@@ -118,10 +118,10 @@ l'extracteur (`extract/out/exe/*.s`). **[C]** = lu dans le code, **[S]** = suppo
 Fait : intro, présentation, menu et options, niveaux en 3D, déplacements et collisions, portes
 et interrupteurs, objets, aliens et leurs tirs, six armes, HUD, mort et vies, statistiques et
 score entre les niveaux, sauvegarde et chargement (11 emplacements), game over, boss du
-niveau 30 et séquence de fin.
+niveau 30 et séquence de fin, ambiances sonores des murs.
 
 À faire : carte, alien translucide,
-éclair de bouche, sons d'ambiance des murs, interpolation de l'affichage pour les écrans rapides.
+interpolation de l'affichage pour les écrans rapides.
 
 ## Origine et droits
 

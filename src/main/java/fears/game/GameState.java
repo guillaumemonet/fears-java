@@ -85,6 +85,8 @@ final class GameState extends BaseAppState implements RawInputListener {
     private Doors doors;
     private EngineData data;
     private EngineSounds sounds;
+    /** Ambiances des murs (voies 2 et 3), ou null si le fichier de murs manque. */
+    private AmbienceSound ambience;
     private ObjectView objects;
     private Aliens aliens;
     /** Le boss du niveau 30, ou null. */
@@ -189,6 +191,13 @@ final class GameState extends BaseAppState implements RawInputListener {
         objects = new ObjectView(app.getAssetManager(), world, data,
                 resources.resolve("objects").resolve("d1_00bf00"));
         scene.attachChild(objects.node());
+
+        Path wallsFile = resources.resolve("raw").resolve(entry.walls() + ".bin");
+        if (Files.isRegularFile(wallsFile)) {
+            ambience = new AmbienceSound(new fears.engine.Ambience(Files.readAllBytes(wallsFile)));
+        } else {
+            System.err.println("AVERTISSEMENT : ambiances des murs introuvables : " + wallsFile);
+        }
 
         textures = new Texture2D[16];
         Path walls = resources.resolve("walls").resolve(entry.walls());
@@ -297,6 +306,9 @@ final class GameState extends BaseAppState implements RawInputListener {
         app.getViewPort().setBackgroundColor(ColorRGBA.Black);
         app.getInputManager().addRawInputListener(this);
         app.getInputManager().setCursorVisible(false);
+        if (ambience != null) {
+            ambience.start();
+        }
         if (hudView != null) {
             hudView.attach(app.getGuiNode(), app.getAssetManager());
             frame(app.getCamera());
@@ -315,6 +327,9 @@ final class GameState extends BaseAppState implements RawInputListener {
         app.getInputManager().removeRawInputListener(this);
         if (sounds != null) {
             sounds.stopAll();
+        }
+        if (ambience != null) {
+            ambience.stop();
         }
     }
 
@@ -344,6 +359,9 @@ final class GameState extends BaseAppState implements RawInputListener {
     }
 
     private void vbl() {
+        if (ambience != null) {
+            ambience.tick();
+        }
         if (finished) {
             return;
         }

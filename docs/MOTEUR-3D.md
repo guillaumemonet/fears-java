@@ -45,6 +45,10 @@ dans jMonkeyEngine.
   pistolet/rolling quand la visée montre la texture 11, −10 par roquette arrivée sur sa case ;
   portes 6, 7, 8 forcées sous 400/300/200 PV ; à sa mort, mur bas de (14,25) à 12 et porte 10.
 
+- `Ambience` : les deux ambiances du jeu de murs (fichier brut à +0x10000), échantillons codés
+  en delta joués en boucle à partir de `loop + 200`, enveloppes {trame, volume, période}
+  interpolées à chaque VBL ; la période est rendue par la hauteur du son (`AmbienceSound`).
+
 ## Cadence
 
 Toute la logique tourne à **50 Hz fixes** (une VBL PAL), quelle que soit la fréquence de
@@ -71,7 +75,7 @@ une VBL sur deux. [à faire] Interpoler l'affichage entre deux VBL pour les écr
 ## Pas encore porté
 
 Alien translucide (type 11) (bascule de
-la banque de couleurs des sprites, `L0134e4`), sons d'ambiance des murs, carte, message de vies et fondu rouge à la mort, séquence de fin après le niveau 30.
+la banque de couleurs des sprites, `L0134e4`), carte, message de vies et fondu rouge à la mort, séquence de fin après le niveau 30.
 
 ## Lancer
 
