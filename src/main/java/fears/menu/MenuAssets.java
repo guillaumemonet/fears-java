@@ -26,6 +26,8 @@ public final class MenuAssets {
     final int[][] pointer;
     /** Couleurs du pointeur (sprite, couleurs 96..99), 0xRRGGBB. */
     final int[] pointerColors;
+    /** Petite police 8×7 ({@code L027faa}) : 480×7, caractère c à l'abscisse (c − 0x20) × 8. */
+    int[][] smallFont;
     /** L'exécutable du menu, {@code d1_000400}. */
     final LinkedImage program;
     /** Logo FEARS de la présentation : 320×191 index 0..15 (quatre plans). */
@@ -77,8 +79,10 @@ public final class MenuAssets {
             indices(read(intro.resolve("bomb_software_416x512.png"))),
         };
         LinkedImage bootProgram = LinkedImage.load(resources.resolve("raw").resolve("d1_0d140c.bin"));
-        return new MenuAssets(palette, font, bomb, pointer, pointerColors, program, logo, boot,
+        MenuAssets assets = new MenuAssets(palette, font, bomb, pointer, pointerColors, program, logo, boot,
                 bootProgram);
+        assets.smallFont = indices(read(menu.resolve("police_8x7.png")));
+        return assets;
     }
 
     private static BufferedImage read(Path file) throws IOException {

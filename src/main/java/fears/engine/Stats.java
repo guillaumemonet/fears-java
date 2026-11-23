@@ -171,6 +171,21 @@ public final class Stats {
         totalTime += result.time();
     }
 
+    /** Reprise d'une partie sauvegardée (santé 99, arme par défaut). */
+    void restore(SaveGame save) {
+        stat[HEALTH] = 99;
+        stat[LIVES] = save.lives();
+        stat[ROLLING] = save.rolling() ? 1 : 0;
+        stat[ROCKET] = save.rocket() ? 1 : 0;
+        stat[PLASMA] = save.plasma() ? 1 : 0;
+        stat[CHAINSAW] = save.chainsaw() ? 1 : 0;
+        stat[AMMO_1] = save.bullets();
+        stat[AMMO_2] = save.rockets();
+        stat[AMMO_3] = save.cells();
+        score = save.score();
+        totalTime = save.totalTime();
+    }
+
     /** Plus de vie : la partie est finie (vies < 0, MOTEUR.md « acteurs » §4). */
     public boolean gameOver() {
         return stat[LIVES] < 0;

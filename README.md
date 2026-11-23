@@ -40,6 +40,8 @@ l'Amiga les affichait.
 | Mort : fondu rouge et vies restantes | Fin de niveau : statistiques et score |
 | ![Château](docs/images/chateau.png) | ![Game over](docs/images/game-over.png) |
 | Écran de chargement entre niveaux | Fin de partie |
+| ![Chargement](docs/images/chargement.png) | |
+| LOAD GAME : choix d'un emplacement | |
 
 ## Lancer
 
@@ -55,6 +57,7 @@ gradle run
 |---|---|
 | `-Dfears.adf=<rép.>` | où trouver les disquettes |
 | `-Dfears.ressources=<rép.>` | cache des ressources extraites (défaut `~/.fears/ressources`) |
+| `-Dfears.sauvegardes=<rép.>` | parties sauvegardées (défaut `~/.fears/sauvegardes`) |
 | `-Dfears.intro=off` | sans l'intro de démarrage |
 | `-Dfears.niveau=N` | lance directement le niveau N |
 | `-Dfears.fov=50` | champ de vision vertical, en degrés |
@@ -112,9 +115,9 @@ l'extracteur (`extract/out/exe/*.s`). **[C]** = lu dans le code, **[S]** = suppo
 
 Fait : intro, présentation, menu et options, niveaux en 3D, déplacements et collisions, portes
 et interrupteurs, objets, aliens et leurs tirs, six armes, HUD, mort et vies, statistiques et
-score entre les niveaux, game over.
+score entre les niveaux, sauvegarde et chargement (11 emplacements), game over.
 
-À faire : SAVE / LOAD GAME, carte, alien translucide, boss du niveau 30 et séquence de fin,
+À faire : carte, alien translucide, boss du niveau 30 et séquence de fin,
 éclair de bouche, sons d'ambiance des murs, interpolation de l'affichage pour les écrans rapides.
 
 ## Origine et droits

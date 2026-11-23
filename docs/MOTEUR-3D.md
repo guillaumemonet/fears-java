@@ -66,8 +66,7 @@ une VBL sur deux. [à faire] Interpoler l'affichage entre deux VBL pour les écr
 ## Pas encore porté
 
 Alien translucide (type 11), boss du niveau 30, éclair de bouche (bascule de
-la banque de couleurs des sprites, `L0134e4`), sons d'ambiance des murs, carte, message de vies et fondu rouge à la mort, écran de game over, SAVE/LOAD GAME,
-séquence de fin après le niveau 30.
+la banque de couleurs des sprites, `L0134e4`), sons d'ambiance des murs, carte, message de vies et fondu rouge à la mort, séquence de fin après le niveau 30.
 
 ## Lancer
 

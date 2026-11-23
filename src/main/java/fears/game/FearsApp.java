@@ -24,6 +24,8 @@ final class FearsApp extends SimpleApplication {
     private GameState gameState;
     private MenuAssets assets;
     private InterludeState interlude;
+    /** Difficulté de la partie en cours : celle du menu, ou celle de la partie chargée. */
+    private int difficulty = 1;
     /** Les stats de la partie en cours, transmises d'un niveau au suivant. */
     private fears.engine.Stats session;
 
@@ -58,16 +60,69 @@ final class FearsApp extends SimpleApplication {
         inputManager.deleteMapping(INPUT_MAPPING_EXIT);
         boolean boot = !"off".equals(System.getProperty("fears.intro"));
         frontEnd = new FrontEnd(assets, boot);
-        frontEndState = new FrontEndState(frontEnd, music, action -> startGame(1));
+        frontEndState = new FrontEndState(frontEnd, music, action -> {
+            switch (action) {
+                case START_GAME -> newGame();
+                case LOAD_GAME -> loadGame();
+                default -> {
+                }
+            }
+        });
         String direct = System.getProperty("fears.niveau");
         if (direct != null) {
+            session = new fears.engine.Stats();
             startGame(Integer.parseInt(direct));
         } else {
             stateManager.attach(frontEndState);
         }
     }
 
-    /** START GAME : le niveau, avec les réglages de la page OPTIONS. */
+    /** Les sauvegardes, à côté du cache des ressources : {@code ~/.fears/sauvegardes}. */
+    private Path saves() {
+        String configured = System.getProperty("fears.sauvegardes");
+        return configured != null ? Path.of(configured)
+                : Resources.cacheDirectory().getParent().resolve("sauvegardes");
+    }
+
+    /** Joue une suite d'écrans fixes, puis enchaîne. */
+    private void play(Runnable then, InterludeState.Step... steps) {
+        stateManager.detach(frontEndState);
+        if (interlude != null) {
+            stateManager.detach(interlude);
+        }
+        interlude = new InterludeState(() -> {
+            stateManager.detach(interlude);
+            interlude = null;
+            then.run();
+        }, steps);
+        stateManager.attach(interlude);
+    }
+
+    /** START GAME : une nouvelle partie au niveau 1, avec les réglages de la page OPTIONS. */
+    private void newGame() {
+        session = new fears.engine.Stats();
+        difficulty = frontEnd.menu().options().difficulty();
+        startGame(1);
+    }
+
+    /** LOAD GAME ({@code L014524}) : choix d'un emplacement, puis reprise à son niveau. */
+    private void loadGame() {
+        fears.menu.SlotScreen slots = new fears.menu.SlotScreen(assets, saves(), false);
+        play(() -> {
+            int chosen = slots.chosen();
+            if (chosen < 0 || chosen >= fears.engine.SaveGame.SLOTS) {
+                backToFrontEnd();
+                return;
+            }
+            fears.engine.SaveGame save = slots.slot(chosen);
+            session = save.toStats();
+            difficulty = save.difficulty();
+            System.out.printf("Partie %d chargee : niveau %d, score %d%n", chosen + 1, save.level() + 1, save.score());
+            startGame(save.level() + 1);
+        }, new InterludeState.Step(slots, slots::finished));
+    }
+
+    /** Un niveau de la partie en cours. */
     private void startGame(int level) {
         stateManager.detach(frontEndState);
         if (interlude != null) {
@@ -77,11 +132,11 @@ final class FearsApp extends SimpleApplication {
         if (gameState != null) {
             stateManager.detach(gameState);
         }
-        if (level == 1 || session == null) {
-            session = new fears.engine.Stats();   // nouvelle partie
-        }
-        gameState = new GameState(resources, level, frontEnd.menu().options(), session,
-                this::backToFrontEnd, this::levelFinished);
+        fears.menu.MenuOptions menu = frontEnd.menu().options();
+        fears.menu.MenuOptions options = new fears.menu.MenuOptions(menu.wallsOff(), menu.ceilingOff(),
+                menu.dithering(), menu.screenSize(), menu.walkEffect(), difficulty, menu.modemMaze(),
+                menu.alienHero());
+        gameState = new GameState(resources, level, options, session, this::backToFrontEnd, this::levelFinished);
         gameState.setOnGameOver(this::gameOver);
         stateManager.attach(gameState);
     }
@@ -96,13 +151,10 @@ final class FearsApp extends SimpleApplication {
             MusicPlayer deadEnd = new MusicPlayer(this);
             deadEnd.load(resources.resolve("gameover").resolve("dead_end.mod"));
             deadEnd.play();
-            interlude = new InterludeState(() -> {
+            play(() -> {
                 deadEnd.stop();
-                stateManager.detach(interlude);
-                interlude = null;
                 backToFrontEnd();
             }, new InterludeState.Step(screen, screen::finished));
-            stateManager.attach(interlude);
         } catch (java.io.IOException e) {
             System.err.println("AVERTISSEMENT : ecran de game over illisible : " + e.getMessage());
             backToFrontEnd();
@@ -110,9 +162,9 @@ final class FearsApp extends SimpleApplication {
     }
 
     /**
-     * Sortie atteinte ({@code L011b7a}) : score, écran des statistiques, puis le château pendant
-     * le « chargement » du niveau suivant ; après le trentième, retour au menu.
-     * [à porter] SAVE GAME, et la séquence de fin après le niveau 30 (d2_0a9a00).
+     * Sortie atteinte ({@code L011b7a}) : score, écran des statistiques, sauvegarde si elle est
+     * demandée ({@code L014444}), puis le château pendant le « chargement » du niveau suivant ;
+     * après le trentième, retour au menu. [à porter] La séquence de fin (d2_0a9a00).
      */
     private void levelFinished(fears.engine.LevelResult result) {
         int level = result.level();
@@ -122,30 +174,44 @@ final class FearsApp extends SimpleApplication {
                 result.secretsTotal(), result.goldTaken(), result.goldTotal(), session.score());
         stateManager.detach(gameState);
         gameState = null;
-        try {
-            fears.menu.StatsScreen stats = new fears.menu.StatsScreen(assets, result,
-                    session.totalTime(), session.score());
+        fears.menu.StatsScreen stats = new fears.menu.StatsScreen(assets, result,
+                session.totalTime(), session.score());
+        play(() -> {
             if (level >= 30) {
-                interlude = new InterludeState(() -> {
-                    stateManager.detach(interlude);
-                    interlude = null;
-                    backToFrontEnd();
-                }, new InterludeState.Step(stats, stats::finished));
-                stateManager.attach(interlude);
-                return;
+                backToFrontEnd();
+            } else if (stats.saveRequested()) {
+                saveThenContinue(level, result);
+            } else {
+                castleThenLevel(level + 1);
             }
-            fears.menu.CastleScreen castle = new fears.menu.CastleScreen(resources);
-            interlude = new InterludeState(() -> {
-                if (stats.saveRequested()) {
-                    System.out.println("SAVE GAME : pas encore porte.");
+        }, new InterludeState.Step(stats, stats::finished));
+    }
+
+    /** SAVE GAME : choix d'un emplacement, écriture, puis le niveau suivant. */
+    private void saveThenContinue(int level, fears.engine.LevelResult result) {
+        fears.menu.SlotScreen slots = new fears.menu.SlotScreen(assets, saves(), true);
+        play(() -> {
+            int chosen = slots.chosen();
+            if (chosen >= 0 && chosen < fears.engine.SaveGame.SLOTS) {
+                try {
+                    // Le niveau suivant, compté de 0 comme L011cc8 + 1.
+                    fears.engine.SaveGame.of(session, level, result.time(), difficulty).write(saves(), chosen);
+                    System.out.println("Partie sauvegardee dans l'emplacement " + (chosen + 1));
+                } catch (IOException e) {
+                    System.err.println("AVERTISSEMENT : sauvegarde impossible : " + e.getMessage());
                 }
-                startGame(level + 1);
-            }, new InterludeState.Step(stats, stats::finished),
-                    new InterludeState.Step(castle, castle::finished));
-            stateManager.attach(interlude);
-        } catch (java.io.IOException e) {
-            System.err.println("AVERTISSEMENT : ecrans de fin de niveau illisibles : " + e.getMessage());
-            startGame(level + 1);
+            }
+            castleThenLevel(level + 1);
+        }, new InterludeState.Step(slots, slots::finished));
+    }
+
+    private void castleThenLevel(int next) {
+        try {
+            fears.menu.CastleScreen castle = new fears.menu.CastleScreen(resources);
+            play(() -> startGame(next), new InterludeState.Step(castle, castle::finished));
+        } catch (IOException e) {
+            System.err.println("AVERTISSEMENT : ecran du chateau illisible : " + e.getMessage());
+            startGame(next);
         }
     }
 

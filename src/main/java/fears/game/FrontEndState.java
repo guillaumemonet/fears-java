@@ -134,7 +134,7 @@ final class FrontEndState extends BaseAppState implements RawInputListener {
             case CREDITS -> {
                 // La présentation tient lieu de crédits : FrontEnd y est déjà passé.
             }
-            case START_GAME -> getApplication().enqueue(() -> onAction.accept(action));
+            case START_GAME, LOAD_GAME -> getApplication().enqueue(() -> onAction.accept(action));
             default -> System.out.println(action + " : pas encore porte, retour a la presentation.");
         }
     }

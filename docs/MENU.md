@@ -113,3 +113,17 @@ valeur du glyphe) — `StatsScreen.java` :
 **Château** (`L0119bc`, fichier `d1_00d7ec`, 320×512 lores entrelacé, 5 zones animées) —
 `CastleScreen.java`. [S] Durée et cadence des animations non relevées : fondu 64 images,
 2 s, fondu 64 images, une image d'animation toutes les 8 VBL.
+
+## Sauvegardes (`L014444`, `L014524`) — `SlotScreen.java`, `SaveGame.java`
+
+Écran hires d'un plan (liste copper 0x2b3cc), petite police 8×7 (`L027faa`, un octet par
+caractère), une ligne tous les 8 pixels à partir de la ligne 48 : titre (`L0149aa` pour charger,
+`L014c3a` pour sauvegarder), ligne vide, 11 emplacements, trois lignes vides, REREAD, CANCEL.
+Ligne pointée = (y − $40) / 8 (`L0147be`) : 0–10 emplacements, 14 REREAD, 15 CANCEL.
+Emplacement occupé (marque « Fred » à +$2A) en $FFF, vide en $CCC. Le score s'écrit sur 10
+chiffres dans une chaîne qui en a 11 : le dernier « 0 » reste.
+
+Enregistrement de 512 octets : temps du niveau, temps total, score ; 9 stats (vies, `L01490e`,
+rolling, roquettes, plasma, tronçonneuse, balles, roquettes, cellules) ; niveau suivant ; −1 ;
+options ; « Fred » ; difficulté. La santé n'est pas sauvegardée. Le portage écrit un fichier
+texte par emplacement dans `~/.fears/sauvegardes/partieNN.sav` (ou `-Dfears.sauvegardes`).
