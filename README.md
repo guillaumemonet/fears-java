@@ -20,7 +20,7 @@ l'Amiga les affichait.
   plutôt que recopié dans le code.
 - **50 Hz fixes.** Toute la logique avance d'une VBL PAL (1/50 s) à la fois, quelle que soit la
   fréquence de l'écran ; ce que l'original fait « par trame » à 25 images/s tourne une VBL sur
-  deux.
+  deux. L'affichage, lui, est interpolé entre deux VBL pour rester fluide sur un écran rapide.
 - **Le HUD est fait comme sur Amiga** : les chiffres sont écrits dans une copie des données des
   sprites matériels, avec les polices du jeu, puis décodés.
 
@@ -44,8 +44,8 @@ l'Amiga les affichait.
 | LOAD GAME : choix d'un emplacement | Niveau 30, palette B |
 | ![Fin : le boss](docs/images/fin-boss.png) | ![Fin : générique](docs/images/fin-generique.png) |
 | Fin : la tête du boss | Fin : le générique des auteurs |
-| ![Carte](docs/images/carte.png) | |
-| La carte (TAB) et sa boussole | |
+| ![Carte](docs/images/carte.png) | ![Options en jeu](docs/images/options-jeu.png) |
+| La carte (TAB) et sa boussole | WALLS et CEILING OFF, vue LOW |
 
 ## Lancer
 
@@ -88,6 +88,8 @@ quitter.
 | 1 à 6 | poing, pistolet, rolling, roquettes, plasma, tronçonneuse |
 | Espace | portes, interrupteurs, sortie |
 | TAB | carte (jeu en pause) |
+| F1 / F2 / F3 | murs unis, sols et plafonds unis, tramage |
+| F4 à F7 | taille de la vue (MAX, BIG, LOW, MIN) |
 | Échap | retour au menu |
 
 Sur Amiga, Entrée faisait courir et Maj tirer.
@@ -121,10 +123,12 @@ l'extracteur (`extract/out/exe/*.s`). **[C]** = lu dans le code, **[S]** = suppo
 Fait : intro, présentation, menu et options, niveaux en 3D, déplacements et collisions, portes
 et interrupteurs, objets, aliens et leurs tirs, six armes, HUD, mort et vies, statistiques et
 score entre les niveaux, sauvegarde et chargement (11 emplacements), game over, boss du
-niveau 30 et séquence de fin, ambiances sonores des murs, carte.
+niveau 30 et séquence de fin, ambiances sonores des murs, carte, options d'affichage en
+jeu (F1 à F7), alien translucide, affichage interpolé.
 
-À faire : alien translucide,
-interpolation de l'affichage pour les écrans rapides.
+Non porté : NULL MODEM GAME (jeu à deux par câble série), EDIT MAZE (l'éditeur de niveaux,
+exécutable `d1_0bb6b2`), la triche (Help). Les points supposés ([S]) sont listés dans
+`docs/MOTEUR-3D.md` et `docs/MENU.md`.
 
 ## Origine et droits
 

@@ -27,6 +27,33 @@ final class Textures {
         return source.getRGB(0, 0, source.getWidth(), source.getHeight(), null, 0, source.getWidth());
     }
 
+    /** La couleur la plus fréquente d'une image (0xRRGGBB), comme le moteur la calcule (0x14DC8). */
+    static int dominantColor(Path file) throws IOException {
+        int[] pixels = argb(file);
+        java.util.Map<Integer, Integer> counts = new java.util.HashMap<>();
+        int best = 0;
+        int bestCount = -1;
+        for (int c : pixels) {
+            int rgb = c & 0xFFFFFF;
+            int n = counts.merge(rgb, 1, Integer::sum);
+            if (n > bestCount) {
+                bestCount = n;
+                best = rgb;
+            }
+        }
+        return best;
+    }
+
+    /** Une texture 1×1 d'une couleur unie. */
+    static Texture2D solid(int rgb) {
+        ByteBuffer pixel = BufferUtils.createByteBuffer(4);
+        pixel.put((byte) (rgb >> 16)).put((byte) (rgb >> 8)).put((byte) rgb).put((byte) 0xFF).flip();
+        Texture2D texture = new Texture2D(new Image(Image.Format.RGBA8, 1, 1, pixel, ColorSpace.sRGB));
+        texture.setMagFilter(Texture.MagFilter.Nearest);
+        texture.setMinFilter(Texture.MinFilter.NearestNoMipMaps);
+        return texture;
+    }
+
     /** Les index de couleur d'un PNG indexé, ligne par ligne depuis le haut. */
     static int[] indices(Path file) throws IOException {
         BufferedImage source = ImageIO.read(file.toFile());

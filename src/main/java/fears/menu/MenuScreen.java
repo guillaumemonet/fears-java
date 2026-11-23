@@ -183,6 +183,29 @@ public final class MenuScreen implements Scene {
                 program.u16(VAR_MODEM_MAZE), program.u16(VAR_HERO) != 0);
     }
 
+    /**
+     * Remet les réglages dans le menu, chaînes comprises — au retour du jeu (le moteur rend ses
+     * options modifiées, L017CC2) ou au chargement d'une partie.
+     */
+    public void applyOptions(MenuOptions o) {
+        program.put16(VAR_WALLS_CEILING, (o.wallsOff() ? 2 : 0) | (o.ceilingOff() ? 1 : 0));
+        program.put32(TEXT_WALLS, o.wallsOff() ? OFF : ON);
+        program.put32(TEXT_CEILING, o.ceilingOff() ? OFF : ON);
+        program.put16(VAR_DITHERING, o.dithering() ? 1 : 0);
+        program.put32(TEXT_DITHERING, o.dithering() ? ON : OFF);
+        int size = Math.max(0, Math.min(3, o.screenSize()));
+        program.put16(VAR_SCREEN_SIZE, size);
+        program.copy(SCREEN_SIZE_NAMES + 4 * size, TEXT_SCREEN_SIZE, 4);
+        program.put16(VAR_WALK, o.walkEffect() ? 1 : 0);
+        program.put32(TEXT_WALK, o.walkEffect() ? ON : OFF);
+        int level = Math.max(0, Math.min(2, o.difficulty()));
+        program.put16(VAR_DIFFICULTY, level);
+        program.copy(DIFFICULTY_NAMES + 8 * level, TEXT_DIFFICULTY, 8);
+        if (phase == Phase.MENU) {
+            redraw();
+        }
+    }
+
     /** L'image courante, 640×256 en 0xRRGGBB. */
     @Override
     public int[] frame() {

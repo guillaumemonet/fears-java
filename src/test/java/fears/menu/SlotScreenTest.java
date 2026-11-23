@@ -25,7 +25,8 @@ class SlotScreenTest {
 
     @Test
     void aSaveComesBackIdentical() throws IOException {
-        SaveGame save = new SaveGame(4, 1234, 98765, 321, 5, true, false, true, false, 77, 12, 3, 2);
+        SaveGame save = new SaveGame(4, 1234, 98765, 321, 5, true, false, true, false, 77, 12, 3, 2,
+                true, false, false, 2);
         save.write(saves, 2);
         assertEquals(save, SaveGame.read(saves, 2));
         assertNull(SaveGame.read(saves, 3));
@@ -39,7 +40,8 @@ class SlotScreenTest {
     void choosingASlotByItsLine() throws IOException {
         Path resources = TestResources.locate();
         assumeTrue(resources != null, "ressources extraites absentes");
-        new SaveGame(6, 0, 50 * 600, 1987, 3, true, true, false, false, 99, 4, 0, 1).write(saves, 0);
+        new SaveGame(6, 0, 50 * 600, 1987, 3, true, true, false, false, 99, 4, 0, 1, false, false, false, 0)
+                .write(saves, 0);
         SlotScreen screen = new SlotScreen(MenuAssets.load(resources), saves, false);
         // Ligne de l'emplacement 2 (vide) : refusé au chargement.
         screen.pointTo(300, 0x40 + 8 * 1 + 2);

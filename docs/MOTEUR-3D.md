@@ -60,7 +60,24 @@ dans jMonkeyEngine.
 Toute la logique tourne à **50 Hz fixes** (une VBL PAL), quelle que soit la fréquence de
 l'écran : un accumulateur de temps exécute autant de VBL que le temps écoulé en contient. Ce que
 l'original fait « par trame » à 25 images/s (pas des portes, défilement de la texture 0) tourne
-une VBL sur deux. [à faire] Interpoler l'affichage entre deux VBL pour les écrans rapides.
+une VBL sur deux.
+
+L'**affichage est interpolé** entre les deux dernières VBL (caméra, aliens, projectiles), au
+prorata du temps écoulé : le mouvement est fluide sur un écran rapide, au prix d'au plus une VBL
+de retard ; la logique n'en est pas touchée. Une réapparition n'est pas lissée.
+
+## Options d'affichage
+
+Celles de la page OPTIONS, modifiables en jeu et rendues au menu à la sortie (`L017CC2`),
+sauvegardées avec la partie :
+
+- WALLS OFF (F1 [S]) : murs de texture < 12 en couleur unie (la plus fréquente de la texture),
+  assombrie d'un cran par 1024 au-delà de 7000 (rendu §4.4) ;
+- CEILING OFF (F2 [S]) : sols et plafonds de texture ≠ 0 en $112 (texture 1) ou $211 ;
+- DITHERING (F3 [S]) : sans effet en 3D — il décalait d'un pixel la seconde ligne des pixels
+  chunky ;
+- taille de vue (F4 à F7) : 92, 76, 60, 40 colonnes et fenêtre verticale de la table 0x10948 ;
+  la vue réduite coupe l'image sans la rétrécir.
 
 ## Ce qui est réinterprété en 3D
 
@@ -74,6 +91,7 @@ une VBL sur deux. [à faire] Interpoler l'affichage entre deux VBL pour les écr
 | Champ de vision | 50° vertical par défaut (`-Dfears.fov`) ; l'original fait ≈ 30,7° × 28,5° | choix |
 | Texture 0 | défile de 25 texels/s (1 par image à 25 images/s) | [C] |
 | Aliens | panneaux tournés vers le joueur (une seule vue dans l'original) ; hauteur Hs, largeur W × 0,186 case, centre à `sol − 2,7465 + yoff` (yoff en unités : les pieds touchent le sol pour tous les types) | [C] formules, [S] unité de yoff |
+| Alien translucide (type 11) | ajout additif de bleu (4/15) sous sa silhouette, pour `fond \|= (fond + 4) & $F` | [S] approché |
 | Ligne de tir | test de cases pleines ou trop basses le long de la visée, au lieu de la découpe par colonne | adaptation |
 | Cadrage | la vue 3D et le HUD occupent le même rectangle 320×256 (5:4), centré dans la fenêtre | [C] écran d'origine |
 | Sons | échantillons lus dans l'exécutable, joués à `3 546 895 / période` Hz, volume/64 | [C] |

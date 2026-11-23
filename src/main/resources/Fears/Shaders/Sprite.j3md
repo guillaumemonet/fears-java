@@ -7,11 +7,17 @@ MaterialDef FearsSprite {
         Float DistancePerCell : 1590
         Float Range : 14300
         Float ShadeFrom : 9500
+        // Alien « fantôme » (type 11) : le décor est teinté de bleu sous sa silhouette.
+        Boolean Translucent
     }
 
     Technique {
         VertexShader GLSL300 GLSL150 GLSL100 : Fears/Shaders/Level.vert
         FragmentShader GLSL300 GLSL150 GLSL100 : Fears/Shaders/Sprite.frag
+
+        Defines {
+            TRANSLUCENT : Translucent
+        }
 
         WorldParameters {
             WorldViewProjectionMatrix

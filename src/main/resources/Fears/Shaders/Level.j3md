@@ -6,6 +6,9 @@ MaterialDef FearsLevel {
         Texture2D ColorMap
         // Distance d'origine où commence l'ombrage : 7500 pour les murs, 9000 pour les sols.
         Float ShadeStart : 7500
+        // Largeur d'un palier d'ombre et assombrissement par palier (2 crans de 1/15).
+        Float ShadeStep : 2048
+        Float ShadeAmount : 0.13333333
         // Unités de distance du lanceur de rayons par case.
         Float DistancePerCell : 1590
         // Portée des rayons : au-delà, rien n'est tracé.

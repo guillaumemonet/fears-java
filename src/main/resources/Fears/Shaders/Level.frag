@@ -2,6 +2,8 @@
 
 uniform sampler2D m_ColorMap;
 uniform float m_ShadeStart;
+uniform float m_ShadeStep;
+uniform float m_ShadeAmount;
 uniform float m_DistancePerCell;
 uniform float m_Range;
 uniform vec2 m_Scroll;
@@ -18,7 +20,7 @@ void main() {
         discard;
     }
     // Palier n = (d - début) >> 11 ; chaque palier retire 2 crans de 1/15 par composante.
-    float level = max(0.0, floor((distance - m_ShadeStart) / 2048.0));
+    float level = max(0.0, floor((distance - m_ShadeStart) / m_ShadeStep));
     vec4 color = texture2D(m_ColorMap, texCoord + m_Scroll * g_Time);
-    gl_FragColor = vec4(max(color.rgb - level * (2.0 / 15.0), 0.0), 1.0);
+    gl_FragColor = vec4(max(color.rgb - level * m_ShadeAmount, 0.0), 1.0);
 }

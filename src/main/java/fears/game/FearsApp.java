@@ -26,6 +26,8 @@ final class FearsApp extends SimpleApplication {
     private InterludeState interlude;
     /** Difficulté de la partie en cours : celle du menu, ou celle de la partie chargée. */
     private int difficulty = 1;
+    /** Réglages d'affichage de la partie en cours : ils passent d'un niveau à l'autre. */
+    private fears.menu.MenuOptions display;
     /** Les stats de la partie en cours, transmises d'un niveau au suivant. */
     private fears.engine.Stats session;
 
@@ -56,6 +58,14 @@ final class FearsApp extends SimpleApplication {
         } else {
             System.err.println("AVERTISSEMENT : musique du menu introuvable dans " + resources.resolve("music"));
         }
+        // Une vue préalable vide toute la fenêtre en noir : la vue du jeu, réduite par la taille
+        // d'écran ou centrée en 5:4, ne vide que son propre rectangle.
+        com.jme3.renderer.Camera full = cam.clone();
+        full.setViewPort(0, 1, 0, 1);
+        com.jme3.renderer.ViewPort background = renderManager.createPreView("fond", full);
+        background.setClearFlags(true, true, true);
+        background.setBackgroundColor(com.jme3.math.ColorRGBA.Black);
+
         // Échap n'arrête plus tout : en jeu, il ramène au menu.
         inputManager.deleteMapping(INPUT_MAPPING_EXIT);
         boolean boot = !"off".equals(System.getProperty("fears.intro"));
@@ -102,6 +112,7 @@ final class FearsApp extends SimpleApplication {
     private void newGame() {
         session = new fears.engine.Stats();
         difficulty = frontEnd.menu().options().difficulty();
+        display = frontEnd.menu().options();
         startGame(1);
     }
 
@@ -117,6 +128,10 @@ final class FearsApp extends SimpleApplication {
             fears.engine.SaveGame save = slots.slot(chosen);
             session = save.toStats();
             difficulty = save.difficulty();
+            fears.menu.MenuOptions menu = frontEnd.menu().options();
+            display = new fears.menu.MenuOptions(save.wallsOff(), save.ceilingOff(), save.dithering(),
+                    save.screenSize(), menu.walkEffect(), save.difficulty(), menu.modemMaze(), menu.alienHero());
+            frontEnd.menu().applyOptions(display);
             System.out.printf("Partie %d chargee : niveau %d, score %d%n", chosen + 1, save.level() + 1, save.score());
             startGame(save.level() + 1);
         }, new InterludeState.Step(slots, slots::finished));
@@ -132,7 +147,7 @@ final class FearsApp extends SimpleApplication {
         if (gameState != null) {
             stateManager.detach(gameState);
         }
-        fears.menu.MenuOptions menu = frontEnd.menu().options();
+        fears.menu.MenuOptions menu = display != null ? display : frontEnd.menu().options();
         fears.menu.MenuOptions options = new fears.menu.MenuOptions(menu.wallsOff(), menu.ceilingOff(),
                 menu.dithering(), menu.screenSize(), menu.walkEffect(), difficulty, menu.modemMaze(),
                 menu.alienHero());
@@ -143,6 +158,8 @@ final class FearsApp extends SimpleApplication {
 
     /** Plus de vie ({@code L011b96} → {@code L012cfc}) : l'écran de game over, puis le menu. */
     private void gameOver() {
+        display = gameState.displayOptions();
+        frontEnd.menu().applyOptions(display);
         stateManager.detach(gameState);
         gameState = null;
         session = null;
@@ -172,6 +189,7 @@ final class FearsApp extends SimpleApplication {
         System.out.printf("Niveau %d termine : aliens %d/%d, secrets %d/%d, tresors %d/%d, score %d%n",
                 level, result.aliensKilled(), result.aliensTotal(), result.secretsFound(),
                 result.secretsTotal(), result.goldTaken(), result.goldTotal(), session.score());
+        display = gameState.displayOptions();
         stateManager.detach(gameState);
         gameState = null;
         fears.menu.StatsScreen stats = new fears.menu.StatsScreen(assets, result,
@@ -213,7 +231,8 @@ final class FearsApp extends SimpleApplication {
             if (chosen >= 0 && chosen < fears.engine.SaveGame.SLOTS) {
                 try {
                     // Le niveau suivant, compté de 0 comme L011cc8 + 1.
-                    fears.engine.SaveGame.of(session, level, result.time(), difficulty).write(saves(), chosen);
+                    fears.engine.SaveGame.of(session, level, result.time(), difficulty, display.wallsOff(),
+                            display.ceilingOff(), display.dithering(), display.screenSize()).write(saves(), chosen);
                     System.out.println("Partie sauvegardee dans l'emplacement " + (chosen + 1));
                 } catch (IOException e) {
                     System.err.println("AVERTISSEMENT : sauvegarde impossible : " + e.getMessage());
@@ -233,8 +252,14 @@ final class FearsApp extends SimpleApplication {
         }
     }
 
-    /** Retour du jeu : la boucle du menu reprend à la présentation. */
+    /** Retour du jeu : la boucle du menu reprend à la présentation, avec les réglages du jeu. */
     private void backToFrontEnd() {
+        if (gameState != null) {
+            display = gameState.displayOptions();
+        }
+        if (display != null) {
+            frontEnd.menu().applyOptions(display);
+        }
         if (gameState != null) {
             stateManager.detach(gameState);
             gameState = null;

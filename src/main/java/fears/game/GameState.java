@@ -63,6 +63,18 @@ final class GameState extends BaseAppState implements RawInputListener {
     private final Path resources;
     private final int levelNumber;
     private final MenuOptions options;
+    /** Réglages d'affichage modifiables en jeu (F1 à F7), rendus au menu à la sortie. */
+    private boolean wallsOff;
+    private boolean ceilingOff;
+    private boolean dithering;
+    private int screenSize;
+    /** Anti-rebond des touches F (10 VBL pour F1-F3, 20 pour F4-F7). */
+    private int keyDelay;
+    private int pendingKey = -1;
+    /** Couleur dominante de chaque texture de mur (mode WALLS OFF), en textures 1×1. */
+    private Texture2D[] flatWalls;
+    private Texture2D floorFlat1;
+    private Texture2D floorFlatOther;
     private final Runnable onQuit;
     private Runnable onGameOver = () -> { };
 
@@ -143,6 +155,10 @@ final class GameState extends BaseAppState implements RawInputListener {
         this.resources = resources;
         this.levelNumber = levelNumber;
         this.options = options;
+        this.wallsOff = options.wallsOff();
+        this.ceilingOff = options.ceilingOff();
+        this.dithering = options.dithering();
+        this.screenSize = options.screenSize();
         this.onQuit = onQuit;
         this.onFinished = onFinished;
     }
@@ -210,10 +226,15 @@ final class GameState extends BaseAppState implements RawInputListener {
         }
 
         textures = new Texture2D[16];
+        flatWalls = new Texture2D[16];
         Path walls = resources.resolve("walls").resolve(entry.walls());
         for (int i = 0; i < textures.length; i++) {
-            textures[i] = Textures.load(walls.resolve(String.format("%02d.png", i)));
+            Path file = walls.resolve(String.format("%02d.png", i));
+            textures[i] = Textures.load(file);
+            flatWalls[i] = Textures.solid(Textures.dominantColor(file));
         }
+        floorFlat1 = Textures.solid(0x111122);
+        floorFlatOther = Textures.solid(0x221111);
         rebuild();
     }
 
@@ -273,6 +294,7 @@ final class GameState extends BaseAppState implements RawInputListener {
         } else {
             player.respawn(level.p1x, level.p1y, level.p1angle);
         }
+        viewKnown = false;
         lastCell = player.cell();
     }
 
@@ -304,18 +326,70 @@ final class GameState extends BaseAppState implements RawInputListener {
         }
         builtRevision = world.revision();
         applyRemap();
+        applyDetail();
+    }
+
+    /**
+     * Modes de détail (MOTEUR.md, rendu §4.4) : WALLS OFF → murs de texture &lt; 12 en couleur
+     * unie, la plus fréquente de la texture, assombrie d'un cran par 1024 au-delà de 7000 ;
+     * CEILING OFF → sols et plafonds de texture non nulle en $112 (texture 1) ou $211.
+     */
+    private void applyDetail() {
+        for (var entry : geometries.entrySet()) {
+            boolean flat = entry.getKey().startsWith("f");
+            int texture = Integer.parseInt(entry.getKey().substring(1));
+            Material material = entry.getValue().getMaterial();
+            int shown = boss != null && !flat ? boss.remap(texture) : texture;
+            if (!flat && wallsOff && texture < 12) {
+                material.setTexture("ColorMap", flatWalls[shown]);
+                material.setFloat("ShadeStart", 7000f);
+                material.setFloat("ShadeStep", 1024f);
+                material.setFloat("ShadeAmount", 1f / 15f);
+            } else if (flat && ceilingOff && texture != 0) {
+                material.setTexture("ColorMap", texture == 1 ? floorFlat1 : floorFlatOther);
+            } else {
+                material.setTexture("ColorMap", textures[shown]);
+                material.setFloat("ShadeStart", flat ? 9000f : 7500f);
+                material.setFloat("ShadeStep", 2048f);
+                material.setFloat("ShadeAmount", 2f / 15f);
+            }
+        }
+    }
+
+    /** Les réglages d'affichage tels qu'ils sont à la sortie du niveau (rendus au menu, L017CC2). */
+    MenuOptions displayOptions() {
+        return new MenuOptions(wallsOff, ceilingOff, dithering, screenSize, options.walkEffect(),
+                options.difficulty(), options.modemMaze(), options.alienHero());
+    }
+
+    /**
+     * F1 / F2 / F3 : murs, sols et plafonds, tramage (anti-rebond 10 VBL) ; F4 à F7 : taille de
+     * la vue (20 VBL). [S] L'ordre de F1 à F3 n'est pas relevé. Le tramage n'a pas d'équivalent
+     * en 3D : il décalait d'un pixel la seconde ligne des pixels « chunky ».
+     */
+    private void displayKeys() {
+        if (keyDelay > 0) {
+            keyDelay--;
+            return;
+        }
+        int key = pendingKey;
+        if (key < 0) {
+            return;
+        }
+        switch (key) {
+            case 1 -> wallsOff = !wallsOff;
+            case 2 -> ceilingOff = !ceilingOff;
+            case 3 -> dithering = !dithering;
+            default -> screenSize = key - 4;
+        }
+        keyDelay = key <= 3 ? 10 : 20;
+        applyDetail();
     }
 
     /** Niveau 30 : les murs passent par la table de remappage animée du boss ({@code L011308}). */
     private void applyRemap() {
-        if (boss == null) {
-            return;
-        }
-        for (var entry : geometries.entrySet()) {
-            if (entry.getKey().startsWith("w")) {
-                int texture = Integer.parseInt(entry.getKey().substring(1));
-                entry.getValue().getMaterial().setTexture("ColorMap", textures[boss.remap(texture)]);
-            }
+        if (boss != null) {
+            applyDetail();
         }
     }
 
@@ -413,9 +487,11 @@ final class GameState extends BaseAppState implements RawInputListener {
         if (mapOpen) {
             mapView.layout(cam.getWidth(), cam.getHeight());
         }
-        placeCamera();
+        // L'affichage interpole entre les deux dernières VBL : la logique reste à 50 Hz fixes.
+        double t = Math.min(1.0, accumulated / VBL);
+        placeCamera(t);
         if (alienView != null) {
-            alienView.update();
+            alienView.update(t);
         }
         if (hudChanged) {
             hudView.upload(hud.image());
@@ -423,10 +499,47 @@ final class GameState extends BaseAppState implements RawInputListener {
         }
     }
 
+    /** État de la caméra à la VBL précédente : x, y (unités), hauteur des yeux, angle (degrés). */
+    private final double[] previousView = new double[4];
+    private final double[] currentView = new double[4];
+    private boolean viewKnown;
+
+    private void snapshotView(double[] view) {
+        view[0] = player.worldX();
+        view[1] = player.worldY();
+        view[2] = player.eyeHeight();
+        view[3] = player.angle() * 360.0 / Trig.FULL_TURN;
+    }
+
+    /** Les sauts voulus (réapparition) ne sont pas lissés. */
+    private void resetView() {
+        snapshotView(currentView);
+        System.arraycopy(currentView, 0, previousView, 0, 4);
+        viewKnown = true;
+    }
+
     private void vbl() {
+        if (player != null) {
+            if (!viewKnown) {
+                resetView();
+            }
+            System.arraycopy(currentView, 0, previousView, 0, 4);
+        }
+        vblLogic();
+        if (player != null) {
+            if (viewKnown) {
+                snapshotView(currentView);
+            } else {
+                resetView();        // réapparition pendant la VBL : pas de glissé
+            }
+        }
+    }
+
+    private void vblLogic() {
         if (ambience != null) {
             ambience.tick();
         }
+        displayKeys();
         if (finished) {
             return;
         }
@@ -521,6 +634,7 @@ final class GameState extends BaseAppState implements RawInputListener {
         activate = "espace".equals(step[0]);
         fire = "tirer".equals(step[0]);
         tab = "carte".equals(step[0]);
+        pendingKey = step[0].matches("f[1-7]") ? step[0].charAt(1) - '0' : -1;
         if ("mourir".equals(step[0]) && dying < 0 && scriptFrames == 0 && stats.damage(999)) {
             died();
         }
@@ -618,22 +732,52 @@ final class GameState extends BaseAppState implements RawInputListener {
         int w = cam.getWidth();
         int h = cam.getHeight();
         float[] r = hudView.rectangle(w, h);
-        cam.setViewPort(r[0] / w, (r[0] + r[2]) / w, r[1] / h, (r[1] + r[3]) / h);
+        // Taille de vue (table 0x10948) : 92, 76, 60 ou 40 colonnes ; fenêtre verticale en rangées
+        // relatives à l'horizon (ligne 64) : −64..63, −54..63, −50..55, −45..50.
+        int[] columns = {92, 76, 60, 40};
+        int[][] rows = {{-64, 63}, {-54, 63}, {-50, 55}, {-45, 50}};
+        int size = Math.max(0, Math.min(3, screenSize));
+        float widthFraction = columns[size] / 92f;
+        float top = (64 + rows[size][0]) / 128f;
+        float bottom = (64 + rows[size][1] + 1) / 128f;
+        float vx = r[0] + r[2] * (1 - widthFraction) / 2;
+        float vw = r[2] * widthFraction;
+        float vyTop = r[1] + r[3] * (1 - top);
+        float vyBottom = r[1] + r[3] * (1 - bottom);
+        cam.setViewPort(vx / w, (vx + vw) / w, vyBottom / h, vyTop / h);
+        // Même échelle qu'en plein écran : la vue réduite coupe l'image, elle ne la rétrécit pas.
         float fov = Float.parseFloat(System.getProperty("fears.fov", String.valueOf(DEFAULT_FOV)));
-        cam.setFrustumPerspective(fov, r[2] / r[3], 0.02f, 12f);
+        float halfHeight = (float) Math.tan(Math.toRadians(fov / 2));
+        float near = 0.02f;
+        float scale = near * halfHeight / (r[3] / 2);
+        float horizon = r[1] + r[3] / 2;
+        float centerX = r[0] + r[2] / 2;
+        cam.setFrustum(near, 12f, (vx - centerX) * scale, (vx + vw - centerX) * scale,
+                (vyTop - horizon) * scale, (vyBottom - horizon) * scale);
         hudView.layout(w, h);
     }
 
     private void placeCamera() {
+        placeCamera(1.0);
+    }
+
+    private void placeCamera(double t) {
         if (player == null) {
             return;
         }
+        if (!viewKnown) {
+            resetView();
+        }
         Camera cam = getApplication().getCamera();
-        float x = (float) (player.worldX() / 64.0);
-        float z = (float) (player.worldY() / 64.0);
-        float y = (float) (-player.eyeHeight() * LevelMesh.HEIGHT_UNIT);
+        double[] p = previousView;
+        double[] c = currentView;
+        float x = (float) ((p[0] + (c[0] - p[0]) * t) / 64.0);
+        float z = (float) ((p[1] + (c[1] - p[1]) * t) / 64.0);
+        float y = (float) (-(p[2] + (c[2] - p[2]) * t) * LevelMesh.HEIGHT_UNIT);
         cam.setLocation(new Vector3f(x, y, z));
-        double a = Math.toRadians(player.angle() * 360.0 / Trig.FULL_TURN);
+        // Angle par le plus court chemin.
+        double turn = ((c[3] - p[3] + 540) % 360) - 180;
+        double a = Math.toRadians(p[3] + turn * t);
         cam.lookAtDirection(new Vector3f((float) -Math.sin(a), 0, (float) Math.cos(a)), Vector3f.UNIT_Y);
     }
 
@@ -655,6 +799,15 @@ final class GameState extends BaseAppState implements RawInputListener {
             case KeyInput.KEY_LSHIFT, KeyInput.KEY_RSHIFT -> run = pressed;
             case KeyInput.KEY_SPACE -> activate = pressed;
             case KeyInput.KEY_TAB -> tab = pressed;
+            case KeyInput.KEY_F1, KeyInput.KEY_F2, KeyInput.KEY_F3, KeyInput.KEY_F4, KeyInput.KEY_F5,
+                 KeyInput.KEY_F6, KeyInput.KEY_F7 -> {
+                int number = event.getKeyCode() - KeyInput.KEY_F1 + 1;
+                if (pressed) {
+                    pendingKey = number;
+                } else if (pendingKey == number) {
+                    pendingKey = -1;
+                }
+            }
             case KeyInput.KEY_LCONTROL, KeyInput.KEY_RCONTROL -> fire = pressed;
             case KeyInput.KEY_1, KeyInput.KEY_2, KeyInput.KEY_3, KeyInput.KEY_4, KeyInput.KEY_5,
                  KeyInput.KEY_6 -> {

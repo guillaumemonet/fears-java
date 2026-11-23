@@ -55,6 +55,9 @@ public final class Aliens {
         int cell;
         double x;
         double y;
+        /** Position à la VBL précédente : l'affichage interpole entre les deux. */
+        double previousX;
+        double previousY;
         State state = State.ALIVE;
         boolean active;
         int health;
@@ -71,6 +74,8 @@ public final class Aliens {
             this.cell = cell;
             this.x = (cell % World.SIZE) * 64 + 32;
             this.y = (cell / World.SIZE) * 64 + 32;
+            this.previousX = x;
+            this.previousY = y;
             this.health = health;
             this.reload = type.fireDelay();
         }
@@ -81,6 +86,15 @@ public final class Aliens {
 
         public double y() {
             return y;
+        }
+
+        /** Position affichée, entre la VBL précédente (t = 0) et la courante (t = 1). */
+        public double x(double t) {
+            return previousX + (x - previousX) * t;
+        }
+
+        public double y(double t) {
+            return previousY + (y - previousY) * t;
         }
 
         public int cell() {
@@ -117,6 +131,9 @@ public final class Aliens {
         double x;
         double y;
         double h;
+        double previousX = Double.NaN;
+        double previousY;
+        double previousH;
         double vx;
         double vy;
         double vh;
@@ -138,6 +155,25 @@ public final class Aliens {
 
         public double y() {
             return y;
+        }
+
+        /** Position affichée, interpolée ; un projectile né pendant la VBL part de sa position. */
+        public double x(double t) {
+            return Double.isNaN(previousX) ? x : previousX + (x - previousX) * t;
+        }
+
+        public double y(double t) {
+            return Double.isNaN(previousX) ? y : previousY + (y - previousY) * t;
+        }
+
+        public double h(double t) {
+            return Double.isNaN(previousX) ? h : previousH + (h - previousH) * t;
+        }
+
+        void remember() {
+            previousX = x;
+            previousY = y;
+            previousH = h;
         }
 
         /** Hauteur, échelle des sols. */
@@ -255,6 +291,16 @@ public final class Aliens {
      */
     public int tick() {
         int damage = 0;
+        for (Alien alien : aliens) {
+            alien.previousX = alien.x;
+            alien.previousY = alien.y;
+        }
+        for (Shot shot : shots) {
+            shot.remember();
+        }
+        if (playerShot != null) {
+            playerShot.remember();
+        }
         for (Alien alien : aliens) {
             switch (alien.state) {
                 case ALIVE -> {

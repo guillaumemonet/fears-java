@@ -19,6 +19,7 @@ import java.util.Properties;
  * +1E  mot       n° du niveau suivant (0..29)                (L011cc8 + 1)
  * +20  long      −1 : arme par défaut                        (L0132ac)
  * +24  3 mots    murs/plafond, tramage, taille d'écran       (L011cb8, L011cba, L011cbe)
+ *                (rétablis au chargement)
  * +2A  "Fred"    marque d'un emplacement occupé
  * +2E  mot       difficulté                                  (L011cc0)
  * </pre>
@@ -28,17 +29,20 @@ import java.util.Properties;
  */
 public record SaveGame(int level, long levelTime, long totalTime, long score, int lives,
                        boolean rolling, boolean rocket, boolean plasma, boolean chainsaw,
-                       int bullets, int rockets, int cells, int difficulty) {
+                       int bullets, int rockets, int cells, int difficulty,
+                       boolean wallsOff, boolean ceilingOff, boolean dithering, int screenSize) {
 
     /** Nombre d'emplacements. */
     public static final int SLOTS = 11;
 
     /** L'état d'une partie au moment de sauvegarder, pour reprendre au niveau {@code nextLevel}. */
-    public static SaveGame of(Stats stats, int nextLevel, long levelTime, int difficulty) {
+    public static SaveGame of(Stats stats, int nextLevel, long levelTime, int difficulty,
+                              boolean wallsOff, boolean ceilingOff, boolean dithering, int screenSize) {
         return new SaveGame(nextLevel, levelTime, stats.totalTime(), stats.score(),
                 stats.get(Stats.LIVES), stats.get(Stats.ROLLING) != 0, stats.get(Stats.ROCKET) != 0,
                 stats.get(Stats.PLASMA) != 0, stats.get(Stats.CHAINSAW) != 0,
-                stats.get(Stats.AMMO_1), stats.get(Stats.AMMO_2), stats.get(Stats.AMMO_3), difficulty);
+                stats.get(Stats.AMMO_1), stats.get(Stats.AMMO_2), stats.get(Stats.AMMO_3), difficulty,
+                wallsOff, ceilingOff, dithering, screenSize);
     }
 
     /** Les stats d'une partie reprise : santé 99, arme par défaut. */
@@ -66,7 +70,9 @@ public record SaveGame(int level, long levelTime, long totalTime, long score, in
             }
             return new SaveGame(i(p, "niveau"), l(p, "tempsNiveau"), l(p, "tempsTotal"), l(p, "score"),
                     i(p, "vies"), b(p, "rolling"), b(p, "roquettes"), b(p, "plasma"), b(p, "tronconneuse"),
-                    i(p, "balles"), i(p, "munitionsRoquettes"), i(p, "cellules"), i(p, "difficulte"));
+                    i(p, "balles"), i(p, "munitionsRoquettes"), i(p, "cellules"), i(p, "difficulte"),
+                    b(p, "mursUnis", false), b(p, "solsUnis", false), b(p, "tramage", false),
+                    i(p, "tailleVue", 0));
         } catch (IOException | RuntimeException e) {
             return null;
         }
@@ -89,6 +95,10 @@ public record SaveGame(int level, long levelTime, long totalTime, long score, in
         p.setProperty("munitionsRoquettes", String.valueOf(rockets));
         p.setProperty("cellules", String.valueOf(cells));
         p.setProperty("difficulte", String.valueOf(difficulty));
+        p.setProperty("mursUnis", String.valueOf(wallsOff));
+        p.setProperty("solsUnis", String.valueOf(ceilingOff));
+        p.setProperty("tramage", String.valueOf(dithering));
+        p.setProperty("tailleVue", String.valueOf(screenSize));
         try (Writer out = Files.newBufferedWriter(file(directory, slot), StandardCharsets.UTF_8)) {
             p.store(out, "Fears - partie sauvegardee (emplacement " + (slot + 1) + ")");
         }
@@ -104,5 +114,16 @@ public record SaveGame(int level, long levelTime, long totalTime, long score, in
 
     private static boolean b(Properties p, String key) {
         return Boolean.parseBoolean(p.getProperty(key).trim());
+    }
+
+    /** Champ ajouté après coup : absent des sauvegardes plus anciennes. */
+    private static boolean b(Properties p, String key, boolean fallback) {
+        String value = p.getProperty(key);
+        return value == null ? fallback : Boolean.parseBoolean(value.trim());
+    }
+
+    private static int i(Properties p, String key, int fallback) {
+        String value = p.getProperty(key);
+        return value == null ? fallback : Integer.parseInt(value.trim());
     }
 }

@@ -50,8 +50,15 @@ final class AlienView {
         for (int set = 0; set < 3; set++) {
             Path dir = spriteDirectory(sprites, sets[set]);
             List<Material> frames = new ArrayList<>();
+            boolean translucent = translucentSet(aliens, set);
             for (int i = 0; dir != null && Files.isRegularFile(dir.resolve(String.format("%02d.png", i))); i++) {
-                frames.add(material(Textures.load(dir.resolve(String.format("%02d.png", i)))));
+                Material material = material(Textures.load(dir.resolve(String.format("%02d.png", i))));
+                if (translucent) {
+                    material.setBoolean("Translucent", true);
+                    material.getAdditionalRenderState().setBlendMode(com.jme3.material.RenderState.BlendMode.Additive);
+                    material.getAdditionalRenderState().setDepthWrite(false);
+                }
+                frames.add(material);
             }
             alienMaterials[set] = frames.toArray(Material[]::new);
         }
@@ -60,6 +67,11 @@ final class AlienView {
             node.attachChild(holder);
             alienNodes.add(holder);
         }
+    }
+
+    /** Le jeu d'aliens n° set est-il « fantôme » (champ +0x26 du type) ? */
+    private static boolean translucentSet(Aliens aliens, int set) {
+        return aliens.aliens().stream().anyMatch(a -> a.set == set && a.type.translucent());
     }
 
     /** Le dossier d'images du jeu d'aliens n° id ({@code sprites/<fichier>_setNN/}). */
@@ -108,7 +120,8 @@ final class AlienView {
     }
 
     /** Met les panneaux à jour : position, taille, image. */
-    void update() {
+    /** @param t fraction de VBL écoulée depuis la dernière (0 à 1) */
+    void update(double t) {
         List<Aliens.Alien> list = aliens.aliens();
         for (int i = 0; i < list.size(); i++) {
             Aliens.Alien alien = list.get(i);
@@ -120,12 +133,16 @@ final class AlienView {
                 continue;
             }
             Geometry quad = (Geometry) holder.getChild(0);
-            quad.setMaterial(frames[Math.min(image, frames.length - 1)]);
+            Material material = frames[Math.min(image, frames.length - 1)];
+            quad.setMaterial(material);
+            quad.setQueueBucket(material.getParam("Translucent") != null
+                    ? com.jme3.renderer.queue.RenderQueue.Bucket.Transparent
+                    : com.jme3.renderer.queue.RenderQueue.Bucket.Inherit);
             double[] display = alien.display();
             float w = (float) (display[0] * Aliens.UNITS_PER_W / 64.0);
             float h = (float) (display[1] * LevelMesh.HEIGHT_UNIT);
             double center = world.floor(alien.cell()) - ObjectView.CENTER_OFFSET + display[2];
-            place(holder, quad, alien.x(), alien.y(), center, w, h);
+            place(holder, quad, alien.x(t), alien.y(t), center, w, h);
         }
         for (Node shot : shotNodes) {
             shot.removeFromParent();
@@ -141,7 +158,7 @@ final class AlienView {
             quad.setMaterial(objectMaterial(shot.image));
             float w = (float) (shot.width * Aliens.UNITS_PER_W / 64.0);
             float h = (float) (shot.height * LevelMesh.HEIGHT_UNIT);
-            place(holder, quad, shot.x(), shot.y(), shot.h(), w, h);
+            place(holder, quad, shot.x(t), shot.y(t), shot.h(t), w, h);
             node.attachChild(holder);
         }
     }
