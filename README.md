@@ -46,6 +46,8 @@ l'Amiga les affichait.
 | Fin : la tête du boss | Fin : le générique des auteurs |
 | ![Carte](docs/images/carte.png) | ![Options en jeu](docs/images/options-jeu.png) |
 | La carte (TAB) et sa boussole | WALLS et CEILING OFF, vue LOW |
+| ![Tramage](docs/images/tramage.png) | |
+| Tramage (F1) : pixels chunky décalés une ligne sur deux | |
 
 ## Lancer
 
@@ -65,6 +67,7 @@ gradle run
 | `-Dfears.intro=off` | sans l'intro de démarrage |
 | `-Dfears.niveau=N` | lance directement le niveau N |
 | `-Dfears.fov=50` | champ de vision vertical, en degrés |
+| `-Dfears.chunky=on` | pixels « chunky » de l'Amiga même sans tramage |
 | `-Dfears.capture=f.png -Dfears.capture.delay=6 -Dfears.capture.quit=true` | capture de la fenêtre |
 | `-Dfears.script=avancer:120,espace:1,tirer:5` | entrées scriptées, en VBL |
 
@@ -88,7 +91,7 @@ quitter.
 | 1 à 6 | poing, pistolet, rolling, roquettes, plasma, tronçonneuse |
 | Espace | portes, interrupteurs, sortie |
 | TAB | carte (jeu en pause) |
-| F1 / F2 / F3 | murs unis, sols et plafonds unis, tramage |
+| F1 / F2 / F3 | tramage (pixels « chunky » de l'Amiga), murs unis, sols et plafonds unis |
 | F4 à F7 | taille de la vue (MAX, BIG, LOW, MIN) |
 | Échap | retour au menu |
 

@@ -1,0 +1,28 @@
+// L'écran « chunky » de l'original (MOTEUR.md, rendu §7) : la vue est faite de pixels de 3 pixels
+// basse résolution sur 2 lignes. Avec le tramage (option DITHERING, modulo $F0), la seconde ligne
+// de chaque rangée est décalée d'un pixel : la première colonne y fait 4 pixels, la dernière 2.
+MaterialDef FearsChunky {
+
+    MaterialParameters {
+        Int NumSamples
+        Int NumSamplesDepth
+        Texture2D Texture
+        // Taille de la vue en pixels de fenêtre, et taille d'un pixel basse résolution / d'une ligne.
+        Vector2 ViewSize
+        Float Lores
+        Float Line
+        Boolean Dither
+    }
+
+    Technique {
+        VertexShader GLSL300 GLSL150 GLSL100 : Fears/Shaders/Chunky.vert
+        FragmentShader GLSL300 GLSL150 GLSL100 : Fears/Shaders/Chunky.frag
+
+        WorldParameters {
+        }
+
+        Defines {
+            DITHER : Dither
+        }
+    }
+}

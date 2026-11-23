@@ -75,6 +75,10 @@ final class GameState extends BaseAppState implements RawInputListener {
     private Texture2D[] flatWalls;
     private Texture2D floorFlat1;
     private Texture2D floorFlatOther;
+    /** Pixels « chunky » et tramage ; {@code -Dfears.chunky=on} les impose sans tramage. */
+    private final ChunkyFilter chunky = new ChunkyFilter();
+    private com.jme3.post.FilterPostProcessor postProcessor;
+    private static final boolean CHUNKY_ALWAYS = "on".equals(System.getProperty("fears.chunky"));
     private final Runnable onQuit;
     private Runnable onGameOver = () -> { };
 
@@ -363,9 +367,8 @@ final class GameState extends BaseAppState implements RawInputListener {
     }
 
     /**
-     * F1 / F2 / F3 : murs, sols et plafonds, tramage (anti-rebond 10 VBL) ; F4 à F7 : taille de
-     * la vue (20 VBL). [S] L'ordre de F1 à F3 n'est pas relevé. Le tramage n'a pas d'équivalent
-     * en 3D : il décalait d'un pixel la seconde ligne des pixels « chunky ».
+     * F1 tramage, F2 murs unis, F3 sols et plafonds unis ({@code L01377a}, anti-rebond commun de
+     * 10 VBL) ; F4 à F7 : taille de la vue (20 VBL). Le tramage passe par {@link ChunkyFilter}.
      */
     private void displayKeys() {
         if (keyDelay > 0) {
@@ -377,9 +380,9 @@ final class GameState extends BaseAppState implements RawInputListener {
             return;
         }
         switch (key) {
-            case 1 -> wallsOff = !wallsOff;
-            case 2 -> ceilingOff = !ceilingOff;
-            case 3 -> dithering = !dithering;
+            case 1 -> dithering = !dithering;        // $50 : L017cc4
+            case 2 -> wallsOff = !wallsOff;          // $51 : bit 1 de L017cc3
+            case 3 -> ceilingOff = !ceilingOff;      // $52 : bit 0 de L017cc3
             default -> screenSize = key - 4;
         }
         keyDelay = key <= 3 ? 10 : 20;
@@ -441,6 +444,9 @@ final class GameState extends BaseAppState implements RawInputListener {
         if (ambience != null) {
             ambience.start();
         }
+        postProcessor = new com.jme3.post.FilterPostProcessor(app.getAssetManager());
+        postProcessor.addFilter(chunky);
+        app.getViewPort().addProcessor(postProcessor);
         if (hudView != null) {
             hudView.attach(app.getGuiNode(), app.getAssetManager());
             frame(app.getCamera());
@@ -466,6 +472,10 @@ final class GameState extends BaseAppState implements RawInputListener {
         }
         if (ambience != null) {
             ambience.stop();
+        }
+        if (postProcessor != null) {
+            app.getViewPort().removeProcessor(postProcessor);
+            postProcessor = null;
         }
     }
 
@@ -754,6 +764,8 @@ final class GameState extends BaseAppState implements RawInputListener {
         float centerX = r[0] + r[2] / 2;
         cam.setFrustum(near, 12f, (vx - centerX) * scale, (vx + vw - centerX) * scale,
                 (vyTop - horizon) * scale, (vyBottom - horizon) * scale);
+        chunky.setEnabled(dithering || CHUNKY_ALWAYS);
+        chunky.configure(vw, vyTop - vyBottom, r[2] / Hud.WIDTH * 2, r[3] / Hud.HEIGHT, dithering);
         hudView.layout(w, h);
     }
 

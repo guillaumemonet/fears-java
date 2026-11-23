@@ -71,11 +71,15 @@ de retard ; la logique n'en est pas touchée. Une réapparition n'est pas lissé
 Celles de la page OPTIONS, modifiables en jeu et rendues au menu à la sortie (`L017CC2`),
 sauvegardées avec la partie :
 
-- WALLS OFF (F1 [S]) : murs de texture < 12 en couleur unie (la plus fréquente de la texture),
-  assombrie d'un cran par 1024 au-delà de 7000 (rendu §4.4) ;
-- CEILING OFF (F2 [S]) : sols et plafonds de texture ≠ 0 en $112 (texture 1) ou $211 ;
-- DITHERING (F3 [S]) : sans effet en 3D — il décalait d'un pixel la seconde ligne des pixels
-  chunky ;
+- DITHERING (F1, `L013798` : inverse `L017CC4`) : `ChunkyFilter` ramène la vue 3D à des
+  pixels « chunky » de 3 pixels basse résolution sur 2 lignes, et décale d'un pixel la seconde
+  ligne de chaque rangée — ce que le moteur fait en passant les modulos des plans de −40 à $F0.
+  `-Dfears.chunky=on` impose les pixels chunky même sans tramage ;
+- WALLS OFF (F2, bit 1 de `L017CC3`) : murs de texture < 12 en couleur unie (la plus fréquente
+  de la texture), assombrie d'un cran par 1024 au-delà de 7000 (rendu §4.4) ;
+- CEILING OFF (F3, bit 0 de `L017CC3`) : sols et plafonds de texture ≠ 0 en $112 (texture 1) ou
+  $211 ;
+- F1 à F3 partagent un anti-rebond de 10 VBL (`L017CB6`) ;
 - taille de vue (F4 à F7) : 92, 76, 60, 40 colonnes et fenêtre verticale de la table 0x10948 ;
   la vue réduite coupe l'image sans la rétrécir.
 
