@@ -1,199 +1,162 @@
-# Fears — portage Java / jMonkeyEngine
+# Fears — Java / jMonkeyEngine port
 
-Portage en Java de **Fears** (Manyk / Bomb Software, 1995), FPS pour Amiga AGA.
+*[Version française](README_fr.md)*
 
-![Un alien du niveau 1](docs/images/alien.png)
+Java port of **Fears** (Manyk / Bomb Software, 1995), an FPS for the Amiga AGA.
 
-Le jeu est réécrit à partir du code 68k d'origine, désassemblé : menu, intro, moteur, aliens,
-armes, HUD, portes, sons. La **logique** est portée à l'identique (collisions, portes, IA,
-cadences, ramassage, score), le **rendu** devient une vraie 3D jMonkeyEngine. Les écrans fixes
-(intro, présentation, menu, statistiques) sont recomposés au pixel près, plan par plan, comme
-l'Amiga les affichait.
+![An alien from level 1](docs/images/alien.png)
 
-## Parti pris
+The game is rewritten from the original 68k code, disassembled: menu, intro, engine, aliens,
+weapons, HUD, doors, sounds. The **logic** is ported as is (collisions, doors, AI,
+firing rates, pickups, score), the **rendering** becomes real jMonkeyEngine 3D. The static screens
+(intro, presentation, menu, statistics) are rebuilt pixel for pixel, layer by layer, the way
+the Amiga displayed them.
 
-- **Les données du jeu ne sont pas dans le dépôt.** Au premier lancement, les deux disquettes
-  d'origine (ADF, ou leurs archives zip) sont passées à l'extracteur, qui range les ressources
-  dans `~/.fears/ressources`. Les lancements suivants les relisent.
-- **Les tables viennent de l'exécutable.** Sinus, types d'aliens, objets, sons, palettes, textes
-  du menu : tout est lu dans les exécutables extraits, aux adresses du listing désassemblé,
-  plutôt que recopié dans le code.
-- **50 Hz fixes.** Toute la logique avance d'une VBL PAL (1/50 s) à la fois, quelle que soit la
-  fréquence de l'écran ; ce que l'original fait « par trame » à 25 images/s tourne une VBL sur
-  deux. L'affichage, lui, est interpolé entre deux VBL pour rester fluide sur un écran rapide.
-- **Le HUD est fait comme sur Amiga** : les chiffres sont écrits dans une copie des données des
-  sprites matériels, avec les polices du jeu, puis décodés.
+## Approach
 
-## Captures
+- **The game data is not in the repository.** On first start, the two original disks
+  (ADF, or their zip archives) are fed to the extractor, which stores the resources
+  in `~/.fears/ressources`. Later starts read them back.
+- **The tables come from the executable.** Sines, alien types, objects, sounds, palettes, menu
+  texts: everything is read from the extracted executables, at the addresses of the disassembled
+  listing, rather than copied into the code.
+- **Fixed 50 Hz.** All the logic advances one PAL VBL (1/50 s) at a time, whatever the
+  screen's refresh rate; what the original does "per frame" at 25 frames/s runs every other
+  VBL. The display, for its part, is interpolated between two VBLs to stay smooth on a fast screen.
+- **The HUD is done as on the Amiga**: the digits are written into a copy of the hardware
+  sprite data, with the game's fonts, then decoded.
+
+## Screenshots
 
 | | |
 |---|---|
 | ![Intro](docs/images/intro-manyk.png) | ![Bomb Software](docs/images/intro-bomb.png) |
-| Intro de démarrage (`d1_0d140c`) | La mascotte Bomb Software |
-| ![Présentation](docs/images/presentation.png) | ![Menu](docs/images/menu.png) |
-| Présentation : logo et texte défilant | Menu, fond « bomb » ondulant |
-| ![Options](docs/images/options.png) | ![Niveau 1](docs/images/niveau1.png) |
-| Page des options | Niveau 1, départ |
-| ![HUD et arme](docs/images/hud.png) | ![Objets](docs/images/objets.png) |
-| HUD et arme en main | Après la première porte : barils et plates-formes |
-| ![Mort](docs/images/mort.png) | ![Statistiques](docs/images/statistiques.png) |
-| Mort : fondu rouge et vies restantes | Fin de niveau : statistiques et score |
-| ![Château](docs/images/chateau.png) | ![Game over](docs/images/game-over.png) |
-| Écran de chargement entre niveaux | Fin de partie |
-| ![Chargement](docs/images/chargement.png) | ![Niveau 30](docs/images/niveau30.png) |
-| LOAD GAME : choix d'un emplacement | Niveau 30, palette B |
-| ![Fin : le boss](docs/images/fin-boss.png) | ![Fin : générique](docs/images/fin-generique.png) |
-| Fin : la tête du boss | Fin : le générique des auteurs |
-| ![Carte](docs/images/carte.png) | ![Options en jeu](docs/images/options-jeu.png) |
-| La carte (TAB) et sa boussole | WALLS et CEILING OFF, vue LOW |
-| ![Tramage](docs/images/tramage.png) | |
-| Tramage (F1) : pixels chunky décalés une ligne sur deux | |
+| Startup intro (`d1_0d140c`) | The Bomb Software mascot |
+| ![Presentation](docs/images/presentation.png) | ![Menu](docs/images/menu.png) |
+| Presentation: logo and scrolling text | Menu, waving "bomb" background |
+| ![Options](docs/images/options.png) | ![Level 1](docs/images/niveau1.png) |
+| Options page | Level 1, start |
+| ![HUD and weapon](docs/images/hud.png) | ![Objects](docs/images/objets.png) |
+| HUD and weapon in hand | After the first door: barrels and platforms |
+| ![Death](docs/images/mort.png) | ![Statistics](docs/images/statistiques.png) |
+| Death: red fade and remaining lives | End of level: statistics and score |
+| ![Castle](docs/images/chateau.png) | ![Game over](docs/images/game-over.png) |
+| Loading screen between levels | End of game |
+| ![Loading](docs/images/chargement.png) | ![Level 30](docs/images/niveau30.png) |
+| LOAD GAME: choosing a slot | Level 30, palette B |
+| ![Ending: the boss](docs/images/fin-boss.png) | ![Ending: credits](docs/images/fin-generique.png) |
+| Ending: the boss's head | Ending: the authors' credits |
+| ![Map](docs/images/carte.png) | ![In-game options](docs/images/options-jeu.png) |
+| The map (TAB) and its compass | WALLS and CEILING OFF, LOW view |
+| ![Dithering](docs/images/tramage.png) | |
+| Dithering (F1): chunky pixels shifted every other line | |
 
-## Jouer sans rien installer
+## Play without installing anything
 
-Chaque [release](https://github.com/guillaumemonet/fears-java/releases) fournit une archive
-`fears-<version>-windows-x64.zip` : décompressez-la et lancez `Fears.exe`, qui porte son propre
-Java. Il faut les deux disquettes du jeu d'origine (ADF, ou les zip qui les contiennent) : posez-les
-dans `~/.fears/adf`, ou laissez le jeu vous demander leur dossier au premier lancement.
+Each [release](https://github.com/guillaumemonet/fears-java/releases) provides an archive
+`fears-<version>-windows-x64.zip`: unzip it and run `Fears.exe`, which carries its own
+Java. You need the two disks of the original game (ADF, or the zips holding them): put them
+in `~/.fears/adf`, or let the game ask you for their folder on first start.
 
-## Construire
+## Build
 
 ```
-./gradlew packageZip      # paquet autonome dans build/distributions/
+./gradlew packageZip      # standalone package in build/distributions/
 ```
 
-## Lancer depuis les sources
+## Run from source
 
-Il faut Java 21 (le wrapper Gradle s'occupe du reste), et les deux disquettes de Fears (`Fears (1995)(Manyk)(AGA)(Disk 1 of 2)…`).
-Elles sont cherchées dans `-Dfears.adf=<répertoire>`, puis `../adf`, `../extract/disks`,
+You need Java 21 (the Gradle wrapper takes care of the rest), and the two Fears disks (`Fears (1995)(Manyk)(AGA)(Disk 1 of 2)…`).
+They are looked for in `-Dfears.adf=<directory>`, then `../adf`, `../extract/disks`,
 `~/.fears/adf`.
 
 ```
 ./gradlew run
 ```
 
-| Option | Effet |
+| Option | Effect |
 |---|---|
-| `-Dfears.adf=<rép.>` | où trouver les disquettes |
-| `-Dfears.ressources=<rép.>` | cache des ressources extraites (défaut `~/.fears/ressources`) |
-| `-Dfears.sauvegardes=<rép.>` | parties sauvegardées (défaut `~/.fears/sauvegardes`) |
-| `-Dfears.intro=off` | sans l'intro de démarrage |
-| `-Dfears.niveau=N` | lance directement le niveau N |
-| `-Dfears.fov=50` | champ de vision vertical, en degrés |
-| `-Dfears.chunky=on` | pixels « chunky » de l'Amiga même sans tramage |
-| `-Dfears.capture=f.png -Dfears.capture.delay=6 -Dfears.capture.quit=true` | capture de la fenêtre |
-| `-Dfears.script=avancer:120,espace:1,tirer:5` | entrées scriptées, en VBL |
+| `-Dfears.adf=<dir>` | where to find the disks |
+| `-Dfears.ressources=<dir>` | cache of the extracted resources (default `~/.fears/ressources`) |
+| `-Dfears.sauvegardes=<dir>` | saved games (default `~/.fears/sauvegardes`) |
+| `-Dfears.intro=off` | without the startup intro |
+| `-Dfears.niveau=N` | starts level N directly |
+| `-Dfears.fov=50` | vertical field of view, in degrees |
+| `-Dfears.chunky=on` | Amiga "chunky" pixels even without dithering |
+| `-Dfears.capture=f.png -Dfears.capture.delay=6 -Dfears.capture.quit=true` | window capture |
+| `-Dfears.script=avancer:120,espace:1,tirer:5` | scripted inputs, in VBLs |
 
-L'extracteur seul : `gradle extract --args="<sortie> <disk1.adf> <disk2.adf>"`.
+The extractor alone: `gradle extract --args="<output> <disk1.adf> <disk2.adf>"`.
 
-## Commandes
+## Controls
 
-**Menu** : souris ou flèches pour viser, clic gauche / Entrée / Espace pour choisir, Échap pour
-quitter.
+**Menu**: mouse or arrow keys to aim, left click / Enter / Space to select, Esc to
+quit.
 
-**Jeu** :
+**Game**:
 
-| Touche | Action |
+| Key | Action |
 |---|---|
-| ↑ ↓ ou Z/W S | avancer, reculer |
-| ← → | tourner |
-| Q/A D | pas de côté |
-| Maj | courir |
-| souris | tourner ; bouton droit pour avancer |
-| clic gauche, Ctrl | tirer |
-| 1 à 6 | poing, pistolet, rolling, roquettes, plasma, tronçonneuse |
-| Espace | portes, interrupteurs, sortie |
-| TAB | carte (jeu en pause) |
-| F1 / F2 / F3 | tramage (pixels « chunky » de l'Amiga), murs unis, sols et plafonds unis |
-| F4 à F7 | taille de la vue (MAX, BIG, LOW, MIN) |
-| Échap | retour au menu |
+| ↑ ↓ or Z/W S | move forward, move back |
+| ← → | turn |
+| Q/A D | strafe |
+| Shift | run |
+| mouse | turn; right button to move forward |
+| left click, Ctrl | fire |
+| 1 to 6 | fist, pistol, rolling, rockets, plasma, chainsaw |
+| Space | doors, switches, exit |
+| TAB | map (game paused) |
+| F1 / F2 / F3 | dithering (Amiga "chunky" pixels), flat walls, flat floors and ceilings |
+| F4 to F7 | view size (MAX, BIG, LOW, MIN) |
+| Esc | back to the menu |
 
-Sur Amiga, Entrée faisait courir et Maj tirer.
+On the Amiga, Enter made you run and Shift fire.
 
 ## Structure
 
-| Paquet | Rôle |
+| Package | Role |
 |---|---|
-| `fears.extract` | extracteur : disquettes, décompression, hunks, images, niveaux, sons |
-| `fears.disasm` | désassembleur 68000/68020 qui a produit les listings |
-| `fears.menu` | intro, présentation, menu, statistiques, château, game over — Java pur, testable sans fenêtre |
-| `fears.engine` | moteur : joueur, collisions, portes, objets, aliens, armes, HUD — Java pur |
-| `fears.audio` | lecteur ProTracker (musiques du menu et du game over) |
-| `fears.game` | coquille jMonkeyEngine : fenêtre, 3D, entrées, son |
+| `fears.extract` | extractor: disks, decompression, hunks, images, levels, sounds |
+| `fears.disasm` | 68000/68020 disassembler that produced the listings |
+| `fears.menu` | intro, presentation, menu, statistics, castle, game over — pure Java, testable without a window |
+| `fears.engine` | engine: player, collisions, doors, objects, aliens, weapons, HUD — pure Java |
+| `fears.audio` | ProTracker player (menu and game over music) |
+| `fears.game` | jMonkeyEngine shell: window, 3D, inputs, sound |
 
-`gradle test` vérifie le portage contre les données d'origine (s'il trouve les ressources
-extraites) et écrit des images de contrôle dans `build/`.
+`gradle test` checks the port against the original data (if it finds the extracted
+resources) and writes check images into `build/`.
 
 ## Documentation
 
-- [`docs/MENU.md`](docs/MENU.md) : menu, intro, présentation, écrans entre niveaux, d'après le
-  listing de `d1_000400` et `d1_0d140c`.
-- [`docs/MOTEUR-3D.md`](docs/MOTEUR-3D.md) : ce qui est porté tel quel, ce qui est réinterprété
-  en 3D, ce qui reste à faire.
+- [`docs/MENU.md`](docs/MENU.md) (in French): menu, intro, presentation, screens between levels, based on the
+  listing of `d1_000400` and `d1_0d140c`.
+- [`docs/MOTEUR-3D.md`](docs/MOTEUR-3D.md) (in French): what is ported as is, what is reinterpreted
+  in 3D, what remains to be done.
 
-Les adresses citées (`L0xxxxx`, `0x…`) sont celles des listings désassemblés produits par
-l'extracteur (`extract/out/exe/*.s`). **[C]** = lu dans le code, **[S]** = supposé.
+The quoted addresses (`L0xxxxx`, `0x…`) are those of the disassembled listings produced by
+the extractor (`extract/out/exe/*.s`). **[C]** = read in the code, **[S]** = assumed.
 
-## État
+## Status
 
-Fait : intro, présentation, menu et options, niveaux en 3D, déplacements et collisions, portes
-et interrupteurs, objets, aliens et leurs tirs, six armes, HUD, mort et vies, statistiques et
-score entre les niveaux, sauvegarde et chargement (11 emplacements), game over, boss du
-niveau 30 et séquence de fin, ambiances sonores des murs, carte, options d'affichage en
-jeu (F1 à F7), alien translucide, affichage interpolé.
+Done: intro, presentation, menu and options, 3D levels, movement and collisions, doors
+and switches, objects, aliens and their shots, six weapons, HUD, death and lives, statistics and
+score between levels, saving and loading (11 slots), game over, the level 30
+boss and the ending sequence, wall ambient sounds, map, in-game display
+options (F1 to F7), translucent alien, interpolated display.
 
-Non porté : NULL MODEM GAME (jeu à deux par câble série), EDIT MAZE (l'éditeur de niveaux,
-exécutable `d1_0bb6b2`), la triche (Help). Les points supposés ([S]) sont listés dans
-`docs/MOTEUR-3D.md` et `docs/MENU.md`.
+Not ported: NULL MODEM GAME (two-player game over a serial cable), EDIT MAZE (the level editor,
+executable `d1_0bb6b2`), the cheat (Help). The assumed points ([S]) are listed in
+`docs/MOTEUR-3D.md` and `docs/MENU.md`.
 
-## Mentions légales et données du jeu
+## Legal Notice & Game Assets
 
-### Implémentation indépendante du moteur
-
-Ce projet est une réimplémentation indépendante du moteur de *Fears*, conçue pour reproduire le comportement du jeu d'origine sur les plateformes modernes.
-
-Le moteur a été développé de façon indépendante, par analyse technique, rétro-ingénierie (désassemblage du code 68k d'origine) et tests de compatibilité. Il n'inclut ni ne redistribue le code source propriétaire du jeu d'origine.
-
-### Fichiers du jeu d'origine
-
-Ce projet nécessite des fichiers du jeu d'origine, comme les deux disquettes du jeu (images ADF, ou les zip qui les contiennent), pour fonctionner.
-
-**Les fichiers du jeu d'origine ne sont pas inclus dans ce projet.**
-
-Chaque utilisateur doit se procurer et fournir ses propres fichiers de jeu auprès d'une source légalement autorisée. Avant de télécharger ou d'utiliser ce moteur, l'utilisateur doit confirmer qu'il possède une copie du jeu d'origine obtenue légalement.
-
-Au premier lancement, le jeu demande leur dossier et en extrait une fois pour toutes les ressources. Les captures d'écran montrent le portage en fonctionnement.
-
-Eloane Studio n'héberge, ne distribue ni ne fournit de copies non autorisées de données de jeu protégées par le droit d'auteur.
-
-### Droits d'auteur et marques
-
-Les noms, marques, graphismes, musiques et autres éléments propriétaires de *Fears* restent la propriété de leurs titulaires respectifs (Manyk, Bomb Software).
-
-Ce projet est une implémentation indépendante et non officielle ; il n'est ni affilié, ni approuvé, ni soutenu par les développeurs ou les éditeurs du jeu d'origine.
-
-### Préservation
-
-Ce projet a pour but de préserver le comportement technique et l'expérience de jeu des jeux vidéo classiques, tout en les rendant accessibles sur les systèmes modernes.
-
-Le moteur est fourni à des fins de compatibilité, de préservation et d'éducation.
-
-### Crédits
-
-Jeu d'origine : Bomb Software, édité par Manyk (1995). Portage Java : **Guillaume Monet**.
-
-<details>
-<summary>English version</summary>
-
-### Legal Notice & Game Assets
-
-#### Independent Engine Implementation
+### Independent Engine Implementation
 
 This project is an independent reimplementation of the *Fears* engine, designed to reproduce the original game's behavior on modern platforms.
 
 The engine has been developed independently through technical analysis, reverse engineering (disassembly of the original 68k code), and compatibility testing. It does not include or redistribute the original game's proprietary source code.
 
-#### Original Game Files
+### Original Game Files
 
 This project requires original game files, such as the game's two Amiga ADF disk images (or the zips holding them), to run.
 
@@ -205,20 +168,18 @@ On first start the game asks for their folder and extracts the resources once an
 
 Eloane Studio does not host, distribute, or provide unauthorized copies of copyrighted game assets.
 
-#### Copyright & Trademarks
+### Copyright & Trademarks
 
 All original game names, trademarks, graphics, music, and other proprietary assets of *Fears* remain the property of their respective copyright holders (Manyk, Bomb Software).
 
 This project is an independent, unofficial implementation and is not affiliated with, endorsed by, or sponsored by the original game's developers or publishers.
 
-#### Preservation
+### Preservation
 
 The purpose of this project is to preserve the technical behavior and gameplay experience of classic video games while making them accessible on modern systems.
 
 The engine is provided for compatibility, preservation, and educational purposes.
 
-#### Credits
+### Credits
 
 Original game: Bomb Software, published by Manyk (1995). Java port: **Guillaume Monet**.
-
-</details>
