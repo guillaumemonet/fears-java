@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "fears"
-version = "0.1.0"
+version = "0.1.1"
 
 val jmeVersion = "3.9.0-stable"
 
