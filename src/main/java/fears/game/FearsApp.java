@@ -244,7 +244,7 @@ final class FearsApp extends SimpleApplication {
 
     private void castleThenLevel(int next) {
         try {
-            fears.menu.CastleScreen castle = new fears.menu.CastleScreen(resources);
+            fears.menu.CastleScreen castle = new fears.menu.CastleScreen(assets, resources, next);
             play(() -> startGame(next), new InterludeState.Step(castle, castle::finished));
         } catch (IOException e) {
             System.err.println("AVERTISSEMENT : ecran du chateau illisible : " + e.getMessage());

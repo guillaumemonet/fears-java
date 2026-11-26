@@ -96,7 +96,7 @@ sauvegardées avec la partie :
 | Texture 0 | défile de 25 texels/s (1 par image à 25 images/s) | [C] |
 | Aliens | panneaux tournés vers le joueur (une seule vue dans l'original) ; hauteur Hs, largeur W × 0,186 case, centre à `sol − 2,7465 + yoff` (yoff en unités : les pieds touchent le sol pour tous les types) | [C] formules, [S] unité de yoff |
 | Alien translucide (type 11) | ajout additif de bleu (4/15) sous sa silhouette, pour `fond \|= (fond + 4) & $F` | [S] approché |
-| Ligne de tir | test de cases pleines ou trop basses le long de la visée, au lieu de la découpe par colonne | adaptation |
+| Ligne de tir | toutes les cases traversées par la visée, du joueur à l'alien : la première case pleine, au sol plus haut que l'œil ou au plafond plus bas, arrête le tir — au lieu de la découpe par colonne | adaptation |
 | Cadrage | la vue 3D et le HUD occupent le même rectangle 320×256 (5:4), centré dans la fenêtre | [C] écran d'origine |
 | Sons | échantillons lus dans l'exécutable, joués à `3 546 895 / période` Hz, volume/64 | [C] |
 

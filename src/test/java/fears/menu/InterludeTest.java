@@ -46,11 +46,15 @@ class InterludeTest {
     void castleScreenRuns() throws IOException {
         Path resources = TestResources.locate();
         assumeTrue(resources != null, "ressources extraites absentes");
-        CastleScreen castle = new CastleScreen(resources);
-        for (int i = 0; i < 100; i++) {
-            castle.tick();
+        MenuAssets assets = MenuAssets.load(resources);
+        for (int level : new int[]{1, 2, 8, 17, 30}) {
+            CastleScreen screen = new CastleScreen(assets, resources, level);
+            for (int i = 0; i < 100; i++) {
+                screen.tick();
+            }
+            write(screen, "chateau-niveau" + level);
         }
-        write(castle, "chateau");
+        CastleScreen castle = new CastleScreen(assets, resources, 2);
         while (!castle.finished()) {
             castle.tick();
         }

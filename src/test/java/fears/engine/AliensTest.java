@@ -94,4 +94,46 @@ class AliensTest {
         assertEquals(Aliens.State.DEAD, alien.state());
         assertEquals(0, s.world().alien(alien.cell()), "un cadavre ne bloque pas");
     }
+
+    @Test
+    void aClosedDoorStopsThePistolAndAnOpenOneDoesNot() throws IOException {
+        Setup s = setup(1);
+        // Jusqu'à la porte n° 1, fermée : l'alien (22,49) est droit devant, derrière elle.
+        for (int i = 0; i < 300; i++) {
+            s.player().tick(1, 0, false, 0);
+        }
+        Aliens.Alien alien = s.aliens().aliens().stream()
+                .filter(a -> a.cell() == World.index(22, 49)).findFirst().orElseThrow();
+        int health = alien.health;
+        s.aliens().playerFired(Weapons.PISTOL);
+        assertEquals(health, alien.health, "le tir a traversé la porte fermée");
+
+        Doors doors = new Doors(s.world(), s.player(), true);
+        doors.tick(true);
+        while (doors.activeDoor() != 0) {
+            doors.tick(false);
+        }
+        s.aliens().playerFired(Weapons.PISTOL);
+        assertEquals(health - 1, alien.health, "porte ouverte : l'alien est touché");
+    }
+
+    @Test
+    void anAwakenedAlienFiresAtItsFirstStepWhenClose() throws IOException {
+        Setup s = setup(1);
+        for (int i = 0; i < 300; i++) {
+            s.player().tick(1, 0, false, 0);
+        }
+        Doors doors = new Doors(s.world(), s.player(), true);
+        doors.tick(true);
+        while (doors.activeDoor() != 0) {
+            doors.tick(false);
+        }
+        // L'alien (22,49) est à 5 cases : réveillé, il tire tout de suite (compteur +38 à 0).
+        int steps = 0;
+        while (s.aliens().alienShots() == 0 && steps < 100) {
+            s.aliens().tick();
+            steps++;
+        }
+        assertTrue(steps <= 2, "premier tir après " + steps + " VBL");
+    }
 }

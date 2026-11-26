@@ -110,9 +110,16 @@ valeur du glyphe) — `StatsScreen.java` :
 - score (`L012fe6`) : `+= 2 × aliens tués + secrets trouvés + 5 × trésors`, cumulé ; secrets =
   déclencheurs jamais actionnés, n° & $3F ≠ 0, mur bas < 11 (MOTEUR.md « monde » §8.2).
 
-**Château** (`L0119bc`, fichier `d1_00d7ec`, 320×512 lores entrelacé, 5 zones animées) —
-`CastleScreen.java`. [S] Durée et cadence des animations non relevées : fondu 64 images,
-2 s, fondu 64 images, une image d'animation toutes les 8 VBL.
+**Château** (`L0119bc`) — `CastleScreen.java`. Image 320×512 en mémoire (0x50000, 8 plans
+entrelacés, 0x140 octets par ligne), dont l'écran montre une fenêtre de 256 lignes choisie par
+niveau (`L0132c2`, table `L0135c6` de 31 entrées {ligne de départ, x en mots, y par 8 lignes}) :
+la tour se gravit d'un écran à l'autre. Plans 5 à 7 : marques 32×32 copiées au blitter
+(couleur = index | v << 5, rouges et oranges) — chaque niveau fini (`L013412`, 0x290de), celui
+qu'on vient de finir en 5 images (`L01338c`, 0x2895e, 9 trames), et la **flèche** (0x287de) qui
+rebondit 8 lignes au-dessus du niveau suivant (`L0134b0`, 36 décalages `L013574`, une position
+par VBL, sans effacement). Animations des 5 zones (`L013686`) : une zone toutes les 2 VBL. Flèche
+et animations partent 20 trames après le début. Fondus de 64 pas. [S] Durée d'affichage : sur
+Amiga, le temps de lire le niveau ; ici 150 VBL.
 
 ## Sauvegardes (`L014444`, `L014524`) — `SlotScreen.java`, `SaveGame.java`
 

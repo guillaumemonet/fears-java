@@ -77,7 +77,8 @@ public final class Aliens {
             this.previousX = x;
             this.previousY = y;
             this.health = health;
-            this.reload = type.fireDelay();
+            // +38 n'est pas initialisé : à 0, l'alien tire dès son premier pas une fois réveillé.
+            this.reload = 0;
         }
 
         public double x() {
@@ -558,18 +559,45 @@ public final class Aliens {
         return (alien.x - player.worldX()) * Math.cos(a) + (alien.y - player.worldY()) * Math.sin(a);
     }
 
-    /** Rien de plein entre l'œil du joueur et l'alien (le moteur s'en remet à sa découpe par colonne). */
+    /**
+     * Rien ne masque l'alien dans la colonne centrale ({@code L011c04}, {@code L011cfa}) : on
+     * parcourt <em>toutes</em> les cases que la visée traverse, du joueur à l'alien, et l'on
+     * s'arrête sur la première qui coupe la ligne des yeux — case pleine, sol plus haut que
+     * l'œil ou plafond plus bas.
+     */
     private boolean clearLine(Alien alien) {
         double eye = player.eyeHeight();
-        double dx = alien.x - player.worldX();
-        double dy = alien.y - player.worldY();
-        int steps = (int) Math.ceil(Math.hypot(dx, dy) / 4);
-        for (int i = 1; i < steps; i++) {
-            int cell = cellAt(player.worldX() + dx * i / steps, player.worldY() + dy * i / steps);
-            if (cell == alien.cell) {
-                break;
+        double x0 = player.worldX() / 64;
+        double y0 = player.worldY() / 64;
+        double dx = alien.x / 64 - x0;
+        double dy = alien.y / 64 - y0;
+        int column = (int) Math.floor(x0);
+        int row = (int) Math.floor(y0);
+        int stepX = dx > 0 ? 1 : -1;
+        int stepY = dy > 0 ? 1 : -1;
+        double deltaX = dx == 0 ? Double.MAX_VALUE : Math.abs(1 / dx);
+        double deltaY = dy == 0 ? Double.MAX_VALUE : Math.abs(1 / dy);
+        double nextX = dx == 0 ? Double.MAX_VALUE : (dx > 0 ? column + 1 - x0 : x0 - column) * deltaX;
+        double nextY = dy == 0 ? Double.MAX_VALUE : (dy > 0 ? row + 1 - y0 : y0 - row) * deltaY;
+        int target = alien.cell;
+        for (int guard = 0; guard < 256; guard++) {
+            if (nextX < nextY) {
+                column += stepX;
+                nextX += deltaX;
+            } else {
+                row += stepY;
+                nextY += deltaY;
             }
-            if (world.solid(cell) || world.floor(cell) < eye || world.ceiling(cell) > eye) {
+            if (Math.min(nextX, nextY) > 1 + 1e-9 && World.index(column, row) != target) {
+                // Au-delà de l'alien sans l'avoir atteint : la case cible est franchie.
+                return true;
+            }
+            int cell = World.index(column, row);
+            if (cell == target) {
+                return true;
+            }
+            if (!World.inside(column, row) || world.solid(cell)
+                    || world.floor(cell) < eye || world.ceiling(cell) > eye) {
                 return false;
             }
         }
