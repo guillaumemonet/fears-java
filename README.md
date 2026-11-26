@@ -82,6 +82,7 @@ They are looked for in `-Dfears.adf=<directory>`, then `../adf`, `../extract/dis
 | `-Dfears.intro=off` | without the startup intro |
 | `-Dfears.niveau=N` | starts level N directly |
 | `-Dfears.fov=50` | vertical field of view, in degrees |
+| `-Dfears.vuelibre=off` | fixed horizon as in the original (free look is on by default: mouse moves the view up and down, middle button recentres) |
 | `-Dfears.chunky=on` | Amiga "chunky" pixels even without dithering |
 | `-Dfears.capture=f.png -Dfears.capture.delay=6 -Dfears.capture.quit=true` | window capture |
 | `-Dfears.script=avancer:120,espace:1,tirer:5` | scripted inputs, in VBLs |

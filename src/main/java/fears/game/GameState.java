@@ -80,6 +80,14 @@ final class GameState extends BaseAppState implements RawInputListener {
     private com.jme3.post.FilterPostProcessor postProcessor;
     private static final boolean CHUNKY_ALWAYS = "on".equals(System.getProperty("fears.chunky"));
     private final Runnable onQuit;
+    /**
+     * Vue libre (liberté du portage) : la souris lève et baisse le regard. L'original a un
+     * horizon fixe ; la visée du jeu reste horizontale, au centre de l'écran.
+     * {@code -Dfears.vuelibre=off} la désactive, le bouton du milieu recentre.
+     */
+    private static final boolean FREE_LOOK = !"off".equals(System.getProperty("fears.vuelibre"));
+    private static final double MAX_PITCH = 45;
+    private double pitch;
     private Runnable onGameOver = () -> { };
 
     /** Ce qui suit la dernière vie perdue. */
@@ -593,7 +601,7 @@ final class GameState extends BaseAppState implements RawInputListener {
         }
         int damage = aliens.tick();
         sounds.tick();
-        if (damage > 0) {
+        if (aliens.takeHits() > 0) {
             sounds.play(Aliens.SOUND_HIT);
             hud.flash();
             if (stats.damage(damage)) {
@@ -790,7 +798,9 @@ final class GameState extends BaseAppState implements RawInputListener {
         // Angle par le plus court chemin.
         double turn = ((c[3] - p[3] + 540) % 360) - 180;
         double a = Math.toRadians(p[3] + turn * t);
-        cam.lookAtDirection(new Vector3f((float) -Math.sin(a), 0, (float) Math.cos(a)), Vector3f.UNIT_Y);
+        double up = Math.toRadians(pitch);
+        cam.lookAtDirection(new Vector3f((float) (-Math.sin(a) * Math.cos(up)), (float) Math.sin(up),
+                (float) (Math.cos(a) * Math.cos(up))), Vector3f.UNIT_Y);
     }
 
     // ------------------------------------------------------------------ entrées
@@ -841,6 +851,10 @@ final class GameState extends BaseAppState implements RawInputListener {
     @Override
     public void onMouseMotionEvent(MouseMotionEvent event) {
         mouseTurn += event.getDX();
+        if (FREE_LOOK) {
+            // Vue libre : 1/6° par pixel, comme la rotation ; la logique du jeu n'en sait rien.
+            pitch = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, pitch + event.getDY() / 6.0));
+        }
     }
 
     @Override
@@ -849,6 +863,8 @@ final class GameState extends BaseAppState implements RawInputListener {
             mouseForward = event.isPressed();
         } else if (event.getButtonIndex() == MouseInput.BUTTON_LEFT) {
             mouseFire = event.isPressed();
+        } else if (event.getButtonIndex() == MouseInput.BUTTON_MIDDLE && event.isPressed()) {
+            pitch = 0;
         }
     }
 

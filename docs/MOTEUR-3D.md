@@ -55,6 +55,15 @@ dans jMonkeyEngine.
   de la table `L016414`. Les cases « vues » (marque à case + 0x221FC posée par le lanceur de
   rayons) sont ici marquées par des rayons lancés dans le champ de la caméra.
 
+- Projectiles (`L01216a`, `L012e50`) : la hauteur du moteur n'est pas celle de l'image — un tir se
+  projette par rapport à l'œil des sprites et se dessine 2,7465 unités plus haut. Tir d'alien :
+  part du sol de l'alien, monte vers pieds − 0,9155 sur la distance de l'axe dominant (il arrive
+  donc à hauteur des yeux à l'écran) ; détruit si h > sol + 2,5, h < plafond + 2,5, case pleine
+  ou déjà occupée par un tir ; chaque axe franchi coûte une case de vie et la perte de dégâts ;
+  touche si le tir est dans la case du joueur à moins de 3 unités du sol (coup au pas suivant),
+  santé −= dégâts / 2 arrondi vers le bas. Tir du joueur : part à sol + 1, détruit si
+  h ≤ plafond + 2 ou h > sol + 2, touche l'alien de la case si h > sol − 2.
+
 ## Cadence
 
 Toute la logique tourne à **50 Hz fixes** (une VBL PAL), quelle que soit la fréquence de
@@ -97,6 +106,7 @@ sauvegardées avec la partie :
 | Aliens | panneaux tournés vers le joueur (une seule vue dans l'original) ; hauteur Hs, largeur W × 0,186 case, centre à `sol − 2,7465 + yoff` (yoff en unités : les pieds touchent le sol pour tous les types) | [C] formules, [S] unité de yoff |
 | Alien translucide (type 11) | ajout additif de bleu (4/15) sous sa silhouette, pour `fond \|= (fond + 4) & $F` | [S] approché |
 | Ligne de tir | toutes les cases traversées par la visée, du joueur à l'alien : la première case pleine, au sol plus haut que l'œil ou au plafond plus bas, arrête le tir — au lieu de la découpe par colonne | adaptation |
+| Vue libre | la souris lève et baisse le regard (±45°), bouton du milieu pour recentrer ; la visée du jeu reste horizontale ; `-Dfears.vuelibre=off` rend l'horizon fixe de l'original | choix |
 | Cadrage | la vue 3D et le HUD occupent le même rectangle 320×256 (5:4), centré dans la fenêtre | [C] écran d'origine |
 | Sons | échantillons lus dans l'exécutable, joués à `3 546 895 / période` Hz, volume/64 | [C] |
 

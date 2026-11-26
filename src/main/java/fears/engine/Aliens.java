@@ -142,6 +142,8 @@ public final class Aliens {
         int damage;
         int loss;
         int life;
+        /** Le joueur est touché : le coup part au pas suivant ($34). */
+        boolean hitPending;
 
         Shot(boolean fromPlayer, int image, double width, double height) {
             this.fromPlayer = fromPlayer;
@@ -325,10 +327,14 @@ public final class Aliens {
         }
         for (int i = shots.size() - 1; i >= 0; i--) {
             Shot shot = shots.get(i);
-            int hit = moveAlienShot(shot);
-            if (hit != 0 || shot.life <= 0) {
+            int result = moveAlienShot(shot);
+            if (result == HIT) {
+                // L0122ce : santé −= dégâts restants / 2, arrondi vers le bas (0 possible).
+                damage += shot.damage / 2;
+                hits++;
+            }
+            if (result != FLYING) {
                 shots.remove(i);
-                damage += Math.max(0, hit);
             }
         }
         if (playerShot != null && !movePlayerShot(playerShot)) {
@@ -439,8 +445,11 @@ public final class Aliens {
         shot.h = world.floor(alien.cell);
         shot.vx = sx * 8;
         shot.vy = sy * 8;
-        double steps = Math.max(1, distance / 8);
-        shot.vh = ((player.feet() - SPRITE_EYE) - shot.h) / steps;
+        // L012a1c : la montée est répartie sur la distance de l'axe dominant (L012a4a, en
+        // unités), à raison de 8 unités par VBL : le tir arrive à la hauteur visée.
+        double dominant = Math.max(1, Math.max(Math.abs(player.worldX() - alien.x),
+                Math.abs(player.worldY() - alien.y)));
+        shot.vh = ((player.feet() - SPRITE_EYE) - shot.h) * 8 / dominant;
         shot.damage = difficulty == 0 ? EASY_DAMAGE[alien.type.shot()] : model.damage();
         shot.loss = model.loss();
         shot.life = 15;
@@ -448,33 +457,75 @@ public final class Aliens {
         alien.fireClock = 4;
     }
 
+    /** Résultats de {@link #moveAlienShot}. */
+    static final int FLYING = 0;
+    static final int DESTROYED = -1;
+    static final int HIT = 1;
+
     /**
-     * {@code L01216a} : deux demi-pas de 4 unités.
+     * {@code L01216a} : deux pas de 4 unités par VBL.
      *
-     * @return les dégâts infligés au joueur (> 0), −1 si détruit sans toucher, 0 s'il vole encore
+     * <ul>
+     *   <li>chaque <em>axe</em> franchi coûte une case de durée de vie (15) et la perte de dégâts
+     *       — une case prise en diagonale compte deux fois ;</li>
+     *   <li>le joueur est touché si le tir est dans sa case et à moins de 3 unités du sol ; le
+     *       coup part au pas suivant, si le tir n'a pas été détruit entre-temps ;</li>
+     *   <li>détruit si h &gt; sol + 2,5, si h &lt; plafond + 2,5, si la case est pleine, ou si un
+     *       autre tir l'occupe déjà. La hauteur h est celle du moteur : le tir se dessine
+     *       2,7465 unités plus haut (voir AlienView), si bien que ces marges valent 0,25 unité
+     *       autour de son image.</li>
+     * </ul>
      */
     private int moveAlienShot(Shot shot) {
-        for (int half = 0; half < 2; half++) {
+        for (int step = 0; step < 2; step++) {
+            if (shot.hitPending) {
+                return HIT;
+            }
+            int column = (int) Math.floor(shot.x / 64);
+            int row = (int) Math.floor(shot.y / 64);
+            shot.h += shot.vh / 2;
             shot.x += shot.vx / 2;
             shot.y += shot.vy / 2;
-            shot.h += shot.vh / 2;
-            int cell = cellAt(shot.x, shot.y);
-            if (cell != shot.cell) {
-                shot.cell = cell;
+            int newColumn = (int) Math.floor(shot.x / 64);
+            int newRow = (int) Math.floor(shot.y / 64);
+            int crossings = (newColumn != column ? 1 : 0) + (newRow != row ? 1 : 0);
+            for (int i = 0; i < crossings; i++) {
+                if (--shot.life <= 0) {
+                    return DESTROYED;
+                }
                 shot.damage -= shot.loss;
-                shot.life--;
-                if (world.solid(cell) || shot.damage <= 0 || shot.life <= 0) {
-                    return -1;
+                if (shot.damage <= 0) {
+                    return DESTROYED;
                 }
             }
-            if (shot.h > world.floor(cell) + 2.5 || shot.h < world.ceiling(cell) - 2.5) {
-                return -1;
-            }
+            int cell = World.index(newColumn, newRow);
             if (cell == player.cell() && Math.abs(world.floor(cell) - shot.h) < 3) {
-                return Math.max(1, shot.damage / 2);
+                shot.hitPending = true;
             }
+            if (world.floor(cell) < shot.h - 2.5 || world.ceiling(cell) > shot.h - 2.5
+                    || world.solid(cell)) {
+                return DESTROYED;
+            }
+            if (cell != shot.cell) {
+                for (Shot other : shots) {
+                    if (other != shot && other.cell == cell) {
+                        return DESTROYED;
+                    }
+                }
+            }
+            shot.cell = cell;
         }
-        return 0;
+        return FLYING;
+    }
+
+    /** Coups reçus pendant la dernière VBL (le son et l'éclair partent même à 0 dégât). */
+    private int hits;
+
+    /** Nombre de tirs qui ont touché le joueur pendant la dernière VBL. */
+    public int takeHits() {
+        int n = hits;
+        hits = 0;
+        return n;
     }
 
     private static int cellAt(double x, double y) {
@@ -611,13 +662,17 @@ public final class Aliens {
         shot.x = player.worldX();
         shot.y = player.worldY();
         shot.cell = player.cell();
-        shot.h = world.floor(player.cell()) - 1;
+        // L012d6c : hauteur = sol + 1 (échelle des sols : une unité plus bas que le sol ; le tir
+        // se dessine 2,7465 unités plus haut, soit 1,75 au-dessus du sol).
+        shot.h = world.floor(player.cell()) + 1;
         shot.vx = -Math.sin(a) * 16;
         shot.vy = Math.cos(a) * 16;
         Alien target = target(false);
         if (target != null) {
+            // [S] Visée verticale vers la fenêtre de touche de l'alien (sol + 1), sur la
+            // profondeur, à 16 unités par VBL.
             double steps = Math.max(1, depth(target) / 16);
-            double aim = world.floor(target.cell) - 1;
+            double aim = world.floor(target.cell) + 1;
             shot.vh = (aim - shot.h) / steps;
         }
         shot.damage = 8;
@@ -641,12 +696,14 @@ public final class Aliens {
                 }
                 return false;
             }
+            // L012efa : détruit si h ≤ plafond + 2 ou h > sol + 2 ; touche l'alien de la case si
+            // h > sol − 2.
             if (world.solid(cell) || shot.life <= 0
-                    || shot.h > world.floor(cell) + 2 || shot.h < world.ceiling(cell) - 2) {
+                    || shot.h > world.floor(cell) + 2 || shot.h <= world.ceiling(cell) + 2) {
                 return false;
             }
             int number = world.alien(cell);
-            if (number != 0 && Math.abs(world.floor(cell) - shot.h) < 2) {
+            if (number != 0 && shot.h > world.floor(cell) - 2) {
                 hurt(aliens.get(number - 1), shot.damage, 30);
                 return false;
             }

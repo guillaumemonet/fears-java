@@ -136,4 +136,31 @@ class AliensTest {
         }
         assertTrue(steps <= 2, "premier tir après " + steps + " VBL");
     }
+
+    @Test
+    void anAlienShotArrivesAtTheAimedHeight() throws IOException {
+        Setup s = setup(1);
+        for (int i = 0; i < 300; i++) {
+            s.player().tick(1, 0, false, 0);
+        }
+        Doors doors = new Doors(s.world(), s.player(), true);
+        doors.tick(true);
+        while (doors.activeDoor() != 0) {
+            doors.tick(false);
+        }
+        double last = Double.NaN;
+        int hits = 0;
+        for (int i = 0; i < 200 && hits == 0; i++) {
+            for (Aliens.Shot shot : s.aliens().shots()) {
+                if (!shot.fromPlayer) {
+                    last = shot.h();
+                }
+            }
+            s.aliens().tick();
+            hits += s.aliens().takeHits();
+        }
+        assertEquals(1, hits, "le tir n'a pas touché");
+        // Visée L012a1c : pieds − 0,9155 ; le tir arrive à moins d'un pas vertical de cette hauteur.
+        assertEquals(s.player().feet() - Aliens.SPRITE_EYE, last, 0.5);
+    }
 }

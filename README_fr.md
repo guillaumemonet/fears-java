@@ -82,6 +82,7 @@ Elles sont cherchées dans `-Dfears.adf=<répertoire>`, puis `../adf`, `../extra
 | `-Dfears.intro=off` | sans l'intro de démarrage |
 | `-Dfears.niveau=N` | lance directement le niveau N |
 | `-Dfears.fov=50` | champ de vision vertical, en degrés |
+| `-Dfears.vuelibre=off` | horizon fixe comme l'original (la vue libre est active par défaut : la souris lève et baisse le regard, bouton du milieu pour recentrer) |
 | `-Dfears.chunky=on` | pixels « chunky » de l'Amiga même sans tramage |
 | `-Dfears.capture=f.png -Dfears.capture.delay=6 -Dfears.capture.quit=true` | capture de la fenêtre |
 | `-Dfears.script=avancer:120,espace:1,tirer:5` | entrées scriptées, en VBL |

@@ -158,7 +158,9 @@ final class AlienView {
             quad.setMaterial(objectMaterial(shot.image));
             float w = (float) (shot.width * Aliens.UNITS_PER_W / 64.0);
             float h = (float) (shot.height * LevelMesh.HEIGHT_UNIT);
-            place(holder, quad, shot.x(t), shot.y(t), shot.h(t), w, h);
+            // Comme les objets, le tir se projette par rapport à l'œil des sprites ($18 − L01408c,
+            // 0x1173c) : son image est 2,7465 unités plus haut que sa hauteur moteur.
+            place(holder, quad, shot.x(t), shot.y(t), shot.h(t) - ObjectView.CENTER_OFFSET, w, h);
             node.attachChild(holder);
         }
     }
